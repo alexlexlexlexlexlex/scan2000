@@ -1,4 +1,4 @@
-"""Genere les fichiers derives du site : manifeste, service worker, icones,
+﻿"""Genere les fichiers derives du site : manifeste, service worker, icones,
 README, et la variante publiee comme Artifact Claude.
 
 L'unique source est index.html. Lancer : python build.py
@@ -103,12 +103,14 @@ from PIL import Image, ImageDraw
 SMOKY = "#161311"
 TEAL = "#F5FFFF"
 MYRTLE = "#4D7175"
+ACCENT = "#2E4A4D"
+LED = "#7DE8B0"
 SEALSALT = "#FAFAF8"
 
 
 def icone(size):
-    """Charte PI2000 : fond smoky, equerres teal, motif QR sealsalt."""
-    img = Image.new("RGB", (size, size), SMOKY)
+    """Charte PI2000 : fond de barre de titre, equerres teal, motif QR sealsalt."""
+    img = Image.new("RGB", (size, size), ACCENT)
     d = ImageDraw.Draw(img)
     u = size / 24.0
     ep = max(2, int(round(u * 1.3)))
@@ -144,7 +146,7 @@ def icone(size):
     # ligne de balayage, comme le viseur de l'appli
     y = size // 2
     d.rectangle([int(u * 1.6), y - max(1, int(u * 0.22)),
-                 size - int(u * 1.6), y + max(1, int(u * 0.22))], fill=MYRTLE)
+                 size - int(u * 1.6), y + max(1, int(u * 0.22))], fill=LED)
     return img
 
 

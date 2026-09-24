@@ -1,13 +1,13 @@
 {
-  "name": "Scanner Douze",
-  "short_name": "Scanner 12",
-  "description": "Scanne des QR codes a 12 chiffres et exporte le releve en Excel.",
+  "name": "SCAN2000",
+  "short_name": "SCAN2000",
+  "description": "Releve de QR codes et de numeros imprimes, export Excel.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0F1214",
-  "theme_color": "#D9491C",
+  "background_color": "#3A575A",
+  "theme_color": "#2E4A4D",
   "icons": [
     {
       "src": "icons/icon-192.png",

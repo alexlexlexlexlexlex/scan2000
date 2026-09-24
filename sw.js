@@ -1,5 +1,5 @@
-/* Scanner Douze - cache applicatif pour un fonctionnement hors ligne. */
-var CACHE = "scanner-douze-v1";
+/* SCAN2000 - cache applicatif, pour un fonctionnement hors ligne. */
+var CACHE = "scan2000-v2";
 var ASSETS = [
   "./",
   "index.html",
@@ -37,7 +37,7 @@ self.addEventListener("fetch", function (e) {
       return fetch(e.request).then(function (res) {
         var copy = res.clone();
         caches.open(CACHE).then(function (c) {
-          try { c.put(e.request, copy); } catch (err) { /* requetes non cachables */ }
+          try { c.put(e.request, copy); } catch (err) { /* non cachable */ }
         });
         return res;
       })["catch"](function () {

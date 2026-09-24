@@ -3,522 +3,525 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="Scanne des QR codes a 12 chiffres et exporte le releve en fichier Excel.">
+<meta name="description" content="Lecture de QR codes et du numero imprime, export du releve en Excel.">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Scanner 12">
-<meta name="theme-color" content="#F1F3F1" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0F1214" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SCAN2000">
+<meta name="theme-color" content="#3A575A" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0D1211" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="icon" type="image/png" href="icons/icon-192.png">
+<title>SCAN2000</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700;9..40,800&display=swap">
 <style>
-  :root {
-    color-scheme: light dark;
-    padding-top: env(safe-area-inset-top, 0px);
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+:root{
+  color-scheme:light;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+
+  /* --- charte MUBE 2025, reprise telle quelle de PI2000 --- */
+  --myrtle:#4D7175; --smoky:#161311; --teal:#F5FFFF; --sealsalt:#FAFAF8;
+
+  --face:#CAD4D2;
+  --rehaut:#F5FFFF;
+  --rehaut-vif:#FFFFFF;
+  --ombre:#7C8683;
+  --ombre-fond:#161311;
+
+  --bureau:#3A575A;
+  --titre-a:#2E4A4D; --titre-b:#4D7175;
+  --papier:#FAFAF8;
+  --ink:#161311; --ink-soft:#4A524F; --ink-faint:#616A67;
+
+  --accent:#2E4A4D; --accent-wash:#DCE8E7;
+  --danger:#8E2C18; --danger-wash:#F2D9D3;
+  --warn:#7A5410; --warn-wash:#F5E7CB;
+  --good:#2C5A44; --good-wash:#DAE9E0;
+  --selection:#2E4A4D;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --face:#2A3433; --rehaut:#4A5654; --rehaut-vif:#5E6B69;
+    --ombre:#151B1A; --ombre-fond:#000000;
+    --bureau:#0D1211; --titre-a:#1D2E30; --titre-b:#3F6165;
+    --papier:#161C1B;
+    --ink:#F5FFFF; --ink-soft:#AEB9B7; --ink-faint:#818C89;
+    --accent:#8FB3B6; --accent-wash:#1E2C2B;
+    --danger:#E8917A; --danger-wash:#2E1913;
+    --warn:#DCAE68; --warn-wash:#2A2210;
+    --good:#84BC9F; --good-wash:#16231C;
+    --selection:#4D7175;
   }
-  img { max-width: 100%; }
-  [hidden] { display: none !important; }
+}
+:root[data-theme="dark"]{
+  --face:#2A3433; --rehaut:#4A5654; --rehaut-vif:#5E6B69;
+  --ombre:#151B1A; --ombre-fond:#000000;
+  --bureau:#0D1211; --titre-a:#1D2E30; --titre-b:#3F6165;
+  --papier:#161C1B;
+  --ink:#F5FFFF; --ink-soft:#AEB9B7; --ink-faint:#818C89;
+  --accent:#8FB3B6; --accent-wash:#1E2C2B;
+  --danger:#E8917A; --danger-wash:#2E1913;
+  --warn:#DCAE68; --warn-wash:#2A2210;
+  --good:#84BC9F; --good-wash:#16231C;
+  --selection:#4D7175;
+}
+
+*{box-sizing:border-box}
+img{max-width:100%}
+[hidden]{display:none!important}
+::selection{background:var(--selection); color:var(--teal)}
+
+body{
+  margin:0; background:var(--bureau); color:var(--ink);
+  font-family:"Avenir Next","Avenir","DM Sans","Segoe UI",system-ui,sans-serif;
+  font-size:14px; line-height:1.5;
+  background-image:radial-gradient(var(--ombre-fond) 1px, transparent 1px);
+  background-size:4px 4px; background-attachment:fixed;
+  -webkit-text-size-adjust:100%;
+}
+.mono{font-family:"DM Mono",ui-monospace,"Courier New",monospace; font-variant-numeric:tabular-nums}
+h1,h2,h3{margin:0; font-weight:800; letter-spacing:-.01em; text-wrap:balance}
+h3{font-size:.92rem; font-weight:700}
+p{margin:0}
+a{color:var(--accent); text-underline-offset:2px}
+:focus-visible{outline:2px dotted var(--ink); outline-offset:1px}
+
+/* ====== RELIEF ====== */
+.sorti{
+  border:2px solid; border-color:var(--rehaut) var(--ombre-fond) var(--ombre-fond) var(--rehaut);
+  box-shadow:inset 1px 1px 0 var(--rehaut-vif), inset -1px -1px 0 var(--ombre);
+  background:var(--face);
+}
+.rentre{
+  border:2px solid; border-color:var(--ombre) var(--rehaut-vif) var(--rehaut-vif) var(--ombre);
+  box-shadow:inset 1px 1px 0 var(--ombre-fond), inset -1px -1px 0 var(--rehaut);
+  background:var(--papier);
+}
+
+.wrap{max-width:580px; margin:0 auto; padding-inline:8px; padding-block:12px 26px}
+
+/* ====== FENÊTRE ====== */
+.fenetre > .corps{padding:12px; background:var(--papier); border-top:2px solid var(--rehaut-vif)}
+.barre-titre{
+  display:flex; align-items:center; gap:8px; padding:4px 4px 4px 7px;
+  background:linear-gradient(90deg,var(--titre-a),var(--titre-b));
+  color:var(--teal); font-weight:800; font-size:.82rem; letter-spacing:.02em;
+}
+.barre-titre .ico{width:17px; height:17px; flex:none}
+.barre-titre .t{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.boutons{display:flex; gap:2px}
+.boutons span{
+  width:17px; height:15px; display:grid; place-items:center;
+  font-size:.62rem; font-weight:800; color:var(--ink);
+  border:2px solid; border-color:var(--rehaut) var(--ombre-fond) var(--ombre-fond) var(--rehaut);
+  background:var(--face); line-height:1;
+}
+.menu{
+  display:flex; gap:2px; padding:2px 4px; font-size:.78rem;
+  border-bottom:1px solid var(--ombre); background:var(--face); color:var(--ink);
+}
+.menu span{padding:2px 8px}
+.menu span u{text-decoration-thickness:1px}
+
+.eyebrow{font-size:.66rem; font-weight:800; letter-spacing:.11em; text-transform:uppercase; color:var(--ink-faint)}
+.chapeau{color:var(--ink-soft); font-size:.86rem}
+
+/* ====== PEETOO ====== */
+.peetoo{display:flex; align-items:flex-end; gap:10px; padding:10px; margin-bottom:12px}
+.peetoo svg{width:72px; height:auto; flex:none}
+.bulle{position:relative; padding:10px 13px; font-size:.86rem; flex:1 1 200px; min-width:0}
+.bulle::before{
+  content:""; position:absolute; left:-9px; bottom:15px; width:0; height:0;
+  border:5px solid transparent; border-right-color:var(--ombre);
+}
+.bulle .qui{font-weight:800; font-size:.68rem; letter-spacing:.09em;
+  text-transform:uppercase; color:var(--accent); display:block; margin-bottom:4px}
+@media (prefers-reduced-motion:no-preference){
+  .peetoo svg .oeil{animation:cligne 6.5s infinite}
+  @keyframes cligne{0%,94%,100%{transform:scaleY(1)}96%{transform:scaleY(.12)}}
+}
+.peetoo svg .oeil{transform-origin:center; transform-box:fill-box}
+@media (max-width:420px){ .peetoo svg{width:56px} }
+
+/* ====== COMPTEUR À LED ====== */
+.prio{display:flex; flex-wrap:wrap; gap:12px 18px; align-items:center; padding:12px; margin-bottom:12px}
+.prio .txt{flex:1 1 200px; min-width:0}
+.prio .txt strong{display:block; font-size:.95rem; overflow-wrap:anywhere}
+.prio .txt p{font-size:.8rem; color:var(--ink-soft); margin-top:3px; overflow-wrap:anywhere}
+.compteur{
+  display:inline-flex; gap:3px; padding:6px 8px; background:#0B0E0D;
+  border:2px solid; border-color:var(--ombre) var(--rehaut-vif) var(--rehaut-vif) var(--ombre);
+}
+.compteur b{
+  font-family:"DM Mono",monospace; font-size:2.1rem; font-weight:500; line-height:1;
+  color:#7DE8B0; background:#11201A; padding:2px 6px; text-shadow:0 0 7px #7DE8B0AA;
+}
+.unite{font-size:.62rem; font-weight:800; letter-spacing:.13em; text-transform:uppercase;
+  color:var(--ink-faint); display:block; margin-top:5px; text-align:center}
+
+/* ====== VISEUR ====== */
+.viseur{position:relative; padding:3px; margin-bottom:8px}
+.ecran{
+  position:relative; background:#0B0E0D; aspect-ratio:4/3; max-width:100%;
+  display:grid; place-items:center; overflow:hidden;
+}
+.ecran video{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; background:#0B0E0D}
+.mire{position:absolute; width:64%; aspect-ratio:1; max-width:230px; pointer-events:none}
+.mire i{position:absolute; width:24px; height:24px; border:3px solid var(--teal)}
+.mire i:nth-child(1){top:0;left:0;border-right:0;border-bottom:0}
+.mire i:nth-child(2){top:0;right:0;border-left:0;border-bottom:0}
+.mire i:nth-child(3){bottom:0;left:0;border-right:0;border-top:0}
+.mire i:nth-child(4){bottom:0;right:0;border-left:0;border-top:0}
+.balayage{position:absolute; left:6%; right:6%; height:2px; background:#7DE8B0;
+  box-shadow:0 0 6px #7DE8B0; top:50%; animation:balaye 2.4s ease-in-out infinite}
+@keyframes balaye{0%,100%{transform:translateY(-50px)}50%{transform:translateY(50px)}}
+@media (prefers-reduced-motion:reduce){.balayage{animation:none}}
+.repos{position:relative; z-index:2; text-align:center; color:#BFD0CD; padding:20px; font-size:.84rem; max-width:32ch}
+.flash{position:absolute; inset:0; background:#7DE8B0; opacity:0; pointer-events:none}
+.flash.on{animation:pop .45s ease-out}
+@keyframes pop{0%{opacity:.5}100%{opacity:0}}
+
+/* l'alerte plein viseur : impossible à rater */
+.rien{
+  position:absolute; inset:0; z-index:5; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:6px; text-align:center; padding:16px;
+  background:rgba(142,44,24,.93); color:#FFF4F1;
+}
+.rien .gros{font-size:1.15rem; font-weight:800; letter-spacing:.02em; line-height:1.2}
+.rien .pt{font-size:.8rem; max-width:30ch; color:#F6DAD3}
+.rien .bord{
+  position:absolute; inset:5px; border:3px dashed #F2D9D3; pointer-events:none;
+  animation:clign 1.1s steps(2,end) infinite;
+}
+@keyframes clign{0%,100%{opacity:1}50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.rien .bord{animation:none}}
+
+/* ====== BARRE D'ÉTAT ====== */
+.etat-barre{display:flex; gap:3px; padding:3px; background:var(--face); flex-wrap:wrap; margin-bottom:12px}
+.etat-barre span{
+  padding:3px 9px; font-size:.72rem; color:var(--ink-soft); flex:none;
+  border:1px solid; border-color:var(--ombre) var(--rehaut-vif) var(--rehaut-vif) var(--ombre);
+}
+.etat-barre span.pousse{flex:1; min-width:60px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.led{display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--ombre); margin-right:6px}
+.etat-barre.live .led{background:#3FBF84; box-shadow:0 0 5px #3FBF84}
+.etat-barre.err .led{background:var(--danger); box-shadow:0 0 5px var(--danger)}
+
+/* ====== BOUTONS ====== */
+.puces{display:flex; flex-wrap:wrap; gap:6px}
+.puce{
+  display:inline-flex; align-items:center; justify-content:center; gap:7px;
+  font:inherit; font-size:.82rem; font-weight:700; text-decoration:none; cursor:pointer;
+  padding:9px 13px; min-height:40px; color:var(--ink); background:var(--face);
+  border:2px solid; border-color:var(--rehaut) var(--ombre-fond) var(--ombre-fond) var(--rehaut);
+  box-shadow:inset 1px 1px 0 var(--rehaut-vif), inset -1px -1px 0 var(--ombre);
+}
+.puce:hover:not(:disabled){background:var(--rehaut)}
+.puce:active:not(:disabled){
+  border-color:var(--ombre-fond) var(--rehaut) var(--rehaut) var(--ombre-fond);
+  box-shadow:inset 1px 1px 0 var(--ombre); padding:10px 12px 8px 14px;
+}
+.puce:disabled{opacity:.45; cursor:default}
+.puce.large{flex:1 1 150px}
+.puce.vedette{background:var(--accent-wash)}
+
+/* ====== PANNEAUX ====== */
+.panneau{padding:11px 13px; margin-bottom:10px}
+.panneau > h3{margin-bottom:7px}
+.avis{padding:10px 13px; font-size:.84rem; color:var(--ink-soft); margin-bottom:10px}
+.avis.attention{background:var(--warn-wash); color:var(--ink)}
+.avis.alerte{background:var(--danger-wash); color:var(--ink); border-left:5px solid var(--danger)}
+.avis strong{color:var(--ink)}
+
+/* ====== FORMULAIRES ====== */
+.champ{display:flex; flex-direction:column; gap:4px; flex:1; min-width:0}
+.champ > label{font-size:.66rem; font-weight:800; letter-spacing:.11em;
+  text-transform:uppercase; color:var(--ink-faint)}
+input[type="text"], select{
+  font:inherit; font-size:.86rem; color:var(--ink); background:var(--papier);
+  padding:9px 10px; min-height:40px; width:100%; border-radius:0;
+  border:2px solid; border-color:var(--ombre) var(--rehaut-vif) var(--rehaut-vif) var(--ombre);
+}
+input.mono{letter-spacing:.08em}
+.ligne{display:flex; gap:6px; align-items:flex-end; margin-bottom:10px}
+.ligne .puce{flex:none}
+.options{display:flex; flex-wrap:wrap; gap:6px 16px; margin-bottom:10px; align-items:center}
+label.bascule{display:flex; align-items:center; gap:7px; font-size:.8rem; color:var(--ink-soft); cursor:pointer}
+label.bascule input{width:16px; height:16px; accent-color:var(--accent)}
+
+/* ====== TABLEAU ====== */
+.tbl{overflow-x:auto; padding:2px; margin-bottom:10px}
+table{width:100%; border-collapse:collapse; font-size:.83rem; background:var(--papier)}
+th{
+  text-align:left; font-size:.64rem; letter-spacing:.08em; text-transform:uppercase;
+  font-weight:800; padding:5px 8px; white-space:nowrap; color:var(--ink); background:var(--face);
+  border:2px solid; border-color:var(--rehaut) var(--ombre) var(--ombre) var(--rehaut);
+}
+td{padding:6px 8px; border-bottom:1px solid var(--face); vertical-align:middle}
+tbody tr:nth-child(even) td{background:color-mix(in srgb,var(--face) 26%,transparent)}
+tbody tr:last-child td{border-bottom:0}
+td.num{font-family:"DM Mono",monospace; font-variant-numeric:tabular-nums; font-size:.78rem}
+td.code{font-family:"DM Mono",monospace; font-weight:500; font-size:.95rem; letter-spacing:.05em}
+td.r{text-align:right; white-space:nowrap}
+tr.s-warn td:first-child{box-shadow:inset 4px 0 0 var(--warn)}
+tr.exemple td{opacity:.5; font-style:italic}
+.jeton{
+  display:inline-block; font-size:.62rem; font-weight:800; letter-spacing:.06em;
+  text-transform:uppercase; padding:1px 6px; white-space:nowrap; margin-left:4px;
+  border:1px solid; border-color:var(--rehaut-vif) var(--ombre) var(--ombre) var(--rehaut-vif);
+}
+.j-warn{background:var(--warn-wash); color:var(--warn)}
+.j-neutre{background:var(--face); color:var(--ink-soft)}
+.j-ocr{background:var(--accent-wash); color:var(--accent)}
+.x{
+  font:inherit; font-size:.72rem; font-weight:800; cursor:pointer; line-height:1;
+  width:22px; height:22px; padding:0; color:var(--ink); background:var(--face);
+  border:2px solid; border-color:var(--rehaut) var(--ombre-fond) var(--ombre-fond) var(--rehaut);
+}
+.x:hover{background:var(--danger-wash)}
+
+/* ====== OCR ====== */
+.ocr-apercu{display:block; width:100%; max-width:320px; margin:0 auto 9px; background:#0B0E0D}
+.ocr-lu{font-family:"DM Mono",monospace; font-size:1.5rem; font-weight:500;
+  letter-spacing:.1em; text-align:center; margin-bottom:9px; color:var(--ink)}
+.jauge{height:12px; background:var(--papier); padding:1px; margin-bottom:8px;
+  border:2px solid; border-color:var(--ombre) var(--rehaut-vif) var(--rehaut-vif) var(--ombre)}
+.jauge i{display:block; height:100%; background:var(--accent); width:0%}
+
+.pied{font-size:.74rem; color:var(--ink-faint); margin-top:12px}
+.pied b{color:var(--ink-soft)}
 </style>
-<title>Scanner Douze</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+Condensed:wght@600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
-<style>
-  :root {
-    --bg: #F1F3F1;
-    --surface: #FFFFFF;
-    --surface-2: #E6E9E6;
-    --line: #D2D7D3;
-    --line-strong: #B6BDB8;
-    --ink: #14181A;
-    --ink-2: #5A625E;
-    --ink-3: #868F8A;
-    --accent: #D9491C;
-    --accent-ink: #FFFFFF;
-    --ok: #16764F;
-    --ok-soft: #DCEFE5;
-    --warn: #8A5B06;
-    --warn-soft: #F6EBD2;
-    --scope: #0A0D0E;
-    --scope-line: #2C3437;
-    --scope-ink: #DDE4E1;
-    --shadow: 0 1px 2px rgba(20, 24, 26, .07), 0 6px 18px rgba(20, 24, 26, .06);
-    --radius: 10px;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --bg: #0F1214;
-      --surface: #171B1D;
-      --surface-2: #21272A;
-      --line: #2E3538;
-      --line-strong: #414A4E;
-      --ink: #E8ECEA;
-      --ink-2: #9AA4A1;
-      --ink-3: #78827F;
-      --accent: #F2703F;
-      --accent-ink: #1A0C06;
-      --ok: #5FD2A0;
-      --ok-soft: #123024;
-      --warn: #E0B458;
-      --warn-soft: #33270E;
-      --scope: #07090A;
-      --scope-line: #2C3437;
-      --scope-ink: #DDE4E1;
-      --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 6px 18px rgba(0, 0, 0, .3);
-    }
-  }
-  :root[data-theme="dark"] {
-    --bg: #0F1214;
-    --surface: #171B1D;
-    --surface-2: #21272A;
-    --line: #2E3538;
-    --line-strong: #414A4E;
-    --ink: #E8ECEA;
-    --ink-2: #9AA4A1;
-    --ink-3: #78827F;
-    --accent: #F2703F;
-    --accent-ink: #1A0C06;
-    --ok: #5FD2A0;
-    --ok-soft: #123024;
-    --warn: #E0B458;
-    --warn-soft: #33270E;
-    --scope: #07090A;
-    --scope-line: #2C3437;
-    --scope-ink: #DDE4E1;
-    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 6px 18px rgba(0, 0, 0, .3);
-  }
-
-  html, body { height: 100%; }
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--ink);
-    font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-    font-size: 15px;
-    line-height: 1.45;
-    -webkit-text-size-adjust: 100%;
-  }
-  * { box-sizing: border-box; }
-
-  .wrap {
-    max-width: 560px;
-    margin: 0 auto;
-    padding-inline: 16px;
-    padding-block: 0 44px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  /* ---- header ---- */
-  header.bar {
-    position: sticky;
-    top: env(safe-area-inset-top, 0px);
-    z-index: 30;
-    background: var(--bg);
-    border-bottom: 1px solid var(--line);
-    margin-inline: -16px;
-    padding: 10px 16px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .brand { display: flex; flex-direction: column; min-width: 0; }
-  .brand b {
-    font-family: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif;
-    font-weight: 600;
-    font-size: 17px;
-    letter-spacing: .01em;
-  }
-  .brand span {
-    font-family: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: .1em;
-    color: var(--ink-3);
-  }
-  .tally {
-    margin-left: auto;
-    font-family: "IBM Plex Mono", ui-monospace, monospace;
-    font-weight: 600;
-    font-size: 20px;
-    font-variant-numeric: tabular-nums;
-    padding: 2px 10px;
-    border: 1px solid var(--line-strong);
-    border-radius: 6px;
-    background: var(--surface);
-  }
-
-  /* ---- buttons ---- */
-  button {
-    font: inherit;
-    font-weight: 600;
-    color: var(--ink);
-    background: var(--surface);
-    border: 1px solid var(--line-strong);
-    border-radius: 8px;
-    padding: 10px 14px;
-    cursor: pointer;
-    min-height: 44px;
-    transition: background .12s ease, border-color .12s ease;
-  }
-  button:hover:not(:disabled) { background: var(--surface-2); }
-  button:disabled { opacity: .45; cursor: default; }
-  button:focus-visible, input:focus-visible, label.sw:focus-within {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
-  button.primary {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: var(--accent-ink);
-  }
-  button.primary:hover:not(:disabled) { filter: brightness(1.06); background: var(--accent); }
-  button.small { min-height: 36px; padding: 6px 10px; font-size: 13px; }
-  button.ghost { background: transparent; border-color: var(--line); color: var(--ink-2); }
-  button.danger { color: #B33A2B; border-color: var(--line); background: transparent; }
-  :root[data-theme="dark"] button.danger, :root:not([data-theme="light"]) button.danger { color: #F0806E; }
-
-  /* ---- scanner ---- */
-  .scope {
-    position: relative;
-    background: var(--scope);
-    border: 1px solid var(--line-strong);
-    border-radius: var(--radius);
-    overflow: hidden;
-    aspect-ratio: 4 / 3;
-    max-width: 100%;
-    display: grid;
-    place-items: center;
-  }
-  .scope video {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    background: var(--scope);
-  }
-  .reticle {
-    position: absolute;
-    width: 62%;
-    aspect-ratio: 1;
-    max-width: 240px;
-    pointer-events: none;
-  }
-  .reticle i {
-    position: absolute;
-    width: 26px;
-    height: 26px;
-    border: 3px solid var(--accent);
-  }
-  .reticle i:nth-child(1) { top: 0; left: 0; border-right: 0; border-bottom: 0; }
-  .reticle i:nth-child(2) { top: 0; right: 0; border-left: 0; border-bottom: 0; }
-  .reticle i:nth-child(3) { bottom: 0; left: 0; border-right: 0; border-top: 0; }
-  .reticle i:nth-child(4) { bottom: 0; right: 0; border-left: 0; border-top: 0; }
-  .sweep {
-    position: absolute;
-    left: 6%; right: 6%;
-    height: 2px;
-    background: var(--accent);
-    opacity: .85;
-    top: 50%;
-    animation: sweep 2.4s ease-in-out infinite;
-  }
-  @keyframes sweep {
-    0%, 100% { transform: translateY(-52px); }
-    50% { transform: translateY(52px); }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .sweep { animation: none; }
-  }
-  .idle {
-    position: relative;
-    z-index: 2;
-    text-align: center;
-    color: var(--scope-ink);
-    padding: 24px 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    align-items: center;
-  }
-  .idle p { margin: 0; font-size: 13px; color: #9BA5A2; max-width: 30ch; }
-  .idle .dot {
-    width: 9px; height: 9px; border-radius: 50%;
-    background: var(--accent);
-  }
-  .flash {
-    position: absolute;
-    inset: 0;
-    background: var(--ok);
-    opacity: 0;
-    pointer-events: none;
-  }
-  .flash.on { animation: pop .45s ease-out; }
-  @keyframes pop { 0% { opacity: .55; } 100% { opacity: 0; } }
-
-  .readout {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    min-height: 26px;
-    font-family: "IBM Plex Mono", ui-monospace, monospace;
-    font-size: 13px;
-    color: var(--ink-2);
-  }
-  .readout .led {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: var(--line-strong);
-    flex: none;
-  }
-  .readout.live .led { background: var(--ok); }
-  .readout.err .led { background: #C4463A; }
-
-  .controls { display: flex; flex-wrap: wrap; gap: 8px; }
-  .controls > * { flex: 1 1 140px; }
-
-  /* ---- options ---- */
-  .opts {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px 18px;
-    padding-block: 2px;
-  }
-  label.sw {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    color: var(--ink-2);
-    cursor: pointer;
-  }
-  label.sw input { width: 18px; height: 18px; accent-color: var(--accent); }
-
-  .field { display: flex; flex-direction: column; gap: 5px; }
-  .field label {
-    font-family: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: .1em;
-    color: var(--ink-3);
-  }
-  input[type="text"] {
-    font: inherit;
-    color: var(--ink);
-    background: var(--surface);
-    border: 1px solid var(--line-strong);
-    border-radius: 8px;
-    padding: 10px 12px;
-    min-height: 44px;
-    width: 100%;
-  }
-  input.mono { font-family: "IBM Plex Mono", ui-monospace, monospace; letter-spacing: .06em; }
-  .row { display: flex; gap: 8px; align-items: flex-end; }
-  .row .field { flex: 1; }
-
-  /* ---- list ---- */
-  .sect-head {
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-    border-top: 1px solid var(--line);
-    padding-top: 14px;
-  }
-  .sect-head h2 {
-    margin: 0;
-    font-family: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif;
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: .12em;
-    color: var(--ink-3);
-    font-weight: 600;
-  }
-  .sect-head .spacer { margin-left: auto; }
-
-  ol.log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-  ol.log li {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 9px 2px;
-    border-bottom: 1px solid var(--line);
-  }
-  ol.log li:first-child { border-top: 1px solid var(--line); }
-  .seq {
-    font-family: "IBM Plex Mono", ui-monospace, monospace;
-    font-size: 12px;
-    font-variant-numeric: tabular-nums;
-    color: var(--ink-3);
-    width: 2.6ch;
-    text-align: right;
-    flex: none;
-  }
-  .val { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
-  .code {
-    font-family: "IBM Plex Mono", ui-monospace, monospace;
-    font-weight: 600;
-    font-size: 16px;
-    letter-spacing: .08em;
-    font-variant-numeric: tabular-nums;
-    overflow-wrap: anywhere;
-  }
-  .meta { font-size: 12px; color: var(--ink-3); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-  .chip {
-    font-family: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif;
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: .08em;
-    padding: 1px 6px;
-    border-radius: 4px;
-  }
-  .chip.warn { background: var(--warn-soft); color: var(--warn); }
-  .chip.dup { background: var(--surface-2); color: var(--ink-2); }
-  .kill {
-    flex: none;
-    min-height: 32px;
-    padding: 4px 9px;
-    font-size: 13px;
-    background: transparent;
-    border-color: transparent;
-    color: var(--ink-3);
-  }
-  .kill:hover { background: var(--surface-2); border-color: var(--line); }
-
-  li.sample { opacity: .5; }
-  li.sample .code { font-weight: 500; }
-
-  .note {
-    font-size: 12.5px;
-    color: var(--ink-3);
-    margin: 0;
-  }
-  .toast {
-    position: fixed;
-    left: 50%;
-    transform: translateX(-50%);
-    bottom: calc(18px + env(safe-area-inset-bottom, 0px));
-    z-index: 60;
-    background: var(--ink);
-    color: var(--bg);
-    padding: 10px 16px;
-    border-radius: 999px;
-    font-size: 13.5px;
-    font-weight: 600;
-    box-shadow: var(--shadow);
-    max-width: calc(100% - 32px);
-    text-align: center;
-  }
-  .hint {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    padding: 12px 14px;
-    font-size: 13px;
-    color: var(--ink-2);
-  }
-  .hint b { color: var(--ink); }
-  .hint ol { margin: 6px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 3px; }
-  .visually-hidden {
-    position: absolute; width: 1px; height: 1px; overflow: hidden;
-    clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
-  }
-</style>
-
 </head>
 <body>
-<script src="vendor/jsQR.js"></script>
-<script src="vendor/xlsx.full.min.js"></script>
 
 <div class="wrap">
-  <header class="bar">
-    <div class="brand">
-      <b>Scanner Douze</b>
-      <span>QR &rarr; 12 chiffres &rarr; Excel</span>
-    </div>
-    <div class="tally" id="tally" aria-label="Nombre de codes enregistrés">0</div>
-  </header>
+<div class="fenetre sorti">
+  <div class="barre-titre">
+    <svg class="ico" viewBox="0 0 20 20" aria-hidden="true">
+      <rect x="2" y="4" width="16" height="12" fill="var(--sealsalt)" stroke="var(--smoky)" stroke-width="1.6"/>
+      <rect x="5" y="7" width="4" height="4" fill="var(--smoky)"/>
+      <rect x="11" y="7" width="2" height="2" fill="var(--smoky)"/>
+      <rect x="11" y="11" width="4" height="2" fill="var(--smoky)"/>
+      <rect x="5" y="13" width="2" height="2" fill="var(--smoky)"/>
+      <line x1="2" y1="10" x2="18" y2="10" stroke="var(--myrtle)" stroke-width="1.6"/>
+    </svg>
+    <span class="t">SCAN2000 — Relevé de scans</span>
+    <span class="boutons"><span>_</span><span>□</span><span>×</span></span>
+  </div>
+  <div class="menu"><span><u>F</u>ichier</span><span><u>É</u>dition</span><span><u>A</u>ffichage</span><span>?</span></div>
 
-  <section>
-    <div class="scope">
-      <video id="cam" playsinline muted autoplay hidden></video>
-      <div class="reticle" id="reticle" hidden><i></i><i></i><i></i><i></i><div class="sweep"></div></div>
-      <div class="idle" id="idle">
-        <div class="dot"></div>
-        <p>Caméra éteinte. Appuie sur <b>Démarrer la caméra</b> et vise un QR code.</p>
+  <div class="corps">
+
+    <div class="peetoo sorti">
+      <svg viewBox="0 0 100 118" role="img" aria-label="Peetoo, la mascotte des applications internes">
+        <rect x="8" y="92" width="84" height="20" rx="9" fill="var(--ombre-fond)" stroke="var(--ombre-fond)" stroke-width="2"/>
+        <rect x="11" y="95" width="78" height="14" rx="6" fill="var(--ombre)"/>
+        <circle cx="22" cy="102" r="5.5" fill="var(--face)" stroke="var(--ombre-fond)" stroke-width="2"/>
+        <circle cx="50" cy="102" r="4" fill="var(--face)" stroke="var(--ombre-fond)" stroke-width="2"/>
+        <circle cx="78" cy="102" r="5.5" fill="var(--face)" stroke="var(--ombre-fond)" stroke-width="2"/>
+        <rect x="2" y="60" width="9" height="26" fill="var(--face)" stroke="var(--ombre-fond)" stroke-width="2"/>
+        <rect x="89" y="60" width="9" height="26" fill="var(--face)" stroke="var(--ombre-fond)" stroke-width="2"/>
+        <path d="M18 52 h64 l6 40 h-76 z" fill="var(--myrtle)" stroke="var(--ombre-fond)" stroke-width="2.5" stroke-linejoin="round"/>
+        <rect x="28" y="62" width="44" height="22" fill="var(--teal)" stroke="var(--ombre-fond)" stroke-width="2"/>
+        <rect x="33" y="66" width="14" height="14" fill="var(--sealsalt)" stroke="var(--ombre-fond)" stroke-width="1.5"/>
+        <rect x="36" y="69" width="4" height="4" fill="var(--smoky)"/>
+        <rect x="42" y="75" width="3" height="3" fill="var(--smoky)"/>
+        <line x1="52" y1="70" x2="66" y2="70" stroke="var(--ombre)" stroke-width="1.5"/>
+        <line x1="52" y1="75" x2="62" y2="75" stroke="var(--ombre)" stroke-width="1.5"/>
+        <rect x="46" y="42" width="8" height="12" fill="var(--ombre)" stroke="var(--ombre-fond)" stroke-width="2"/>
+        <g class="tete">
+          <rect x="24" y="30" width="52" height="8" rx="4" fill="var(--ombre)" stroke="var(--ombre-fond)" stroke-width="2"/>
+          <g>
+            <circle cx="32" cy="24" r="15" fill="var(--face)" stroke="var(--ombre-fond)" stroke-width="2.5"/>
+            <circle class="oeil" cx="32" cy="24" r="9" fill="var(--smoky)"/>
+            <circle cx="32" cy="24" r="4.5" fill="var(--teal)"/>
+            <circle cx="29.5" cy="21" r="2" fill="#FFFFFF"/>
+          </g>
+          <g>
+            <circle cx="68" cy="24" r="15" fill="var(--face)" stroke="var(--ombre-fond)" stroke-width="2.5"/>
+            <circle class="oeil" cx="68" cy="24" r="9" fill="var(--smoky)"/>
+            <circle cx="68" cy="24" r="4.5" fill="var(--teal)"/>
+            <circle cx="65.5" cy="21" r="2" fill="#FFFFFF"/>
+          </g>
+          <line x1="50" y1="30" x2="50" y2="14" stroke="var(--ombre-fond)" stroke-width="2"/>
+          <circle cx="50" cy="11" r="3.5" fill="var(--danger)" stroke="var(--ombre-fond)" stroke-width="2"/>
+        </g>
+      </svg>
+      <div class="bulle rentre">
+        <span class="qui">Peetoo · SCAN2000</span>
+        <span id="dit">Je lis le QR code. S’il ne passe pas, je peux lire le numéro imprimé en dessous.</span>
       </div>
-      <div class="flash" id="flash"></div>
     </div>
-    <div class="readout" id="readout"><span class="led"></span><span id="status">En attente</span></div>
-  </section>
 
-  <div class="controls">
-    <button class="primary" id="btnCam" type="button">Démarrer la caméra</button>
-    <button type="button" id="btnPhoto">Scanner une photo</button>
-  </div>
-  <input type="file" id="photo" accept="image/*" capture="environment" class="visually-hidden">
-
-  <div class="opts">
-    <label class="sw"><input type="checkbox" id="optDup" checked> Refuser les doublons</label>
-    <label class="sw"><input type="checkbox" id="optBeep" checked> Bip à chaque scan</label>
-  </div>
-
-  <div class="row">
-    <div class="field">
-      <label for="manual">Saisie manuelle</label>
-      <input type="text" id="manual" class="mono" inputmode="numeric" autocomplete="off" placeholder="123456789012">
+    <div class="prio sorti">
+      <div>
+        <div class="compteur" id="compteur"><b>0</b><b>0</b><b>0</b></div>
+        <span class="unite">codes relevés</span>
+      </div>
+      <div class="txt">
+        <strong id="dernierCode">En attente du premier scan</strong>
+        <p class="mono" id="dernierMeta">le relevé est gardé sur ce téléphone</p>
+      </div>
     </div>
-    <button type="button" id="btnAdd">Ajouter</button>
-  </div>
 
-  <div class="field">
-    <label for="lot">Nom du relevé (sert au nom du fichier)</label>
-    <input type="text" id="lot" autocomplete="off" placeholder="Inventaire">
-  </div>
+    <div class="viseur rentre">
+      <div class="ecran">
+        <video id="cam" playsinline muted autoplay hidden></video>
+        <div class="mire" id="mire" hidden><i></i><i></i><i></i><i></i><div class="balayage"></div></div>
+        <p class="repos" id="repos">Caméra éteinte. Appuie sur <b>Démarrer la caméra</b> et vise le QR code.</p>
+        <div class="rien" id="rien" hidden>
+          <div class="bord"></div>
+          <div class="gros">AUCUN CODE DÉTECTÉ</div>
+          <div class="pt" id="rienPt">Rien lu depuis 5 secondes.</div>
+        </div>
+        <div class="flash" id="flash"></div>
+      </div>
+    </div>
 
-  <div class="sect-head">
-    <h2>Relevé</h2>
-    <span class="spacer"></span>
-    <button class="small danger" type="button" id="btnClear">Tout effacer</button>
-  </div>
+    <div class="etat-barre" id="etat">
+      <span class="pousse"><i class="led"></i><span id="statut">Prêt</span></span>
+      <span class="mono" id="etatLong">11 chiffres</span>
+    </div>
 
-  <ol class="log" id="log"></ol>
-  <p class="note" id="emptyNote">Aucun scan pour l'instant — la ligne ci-dessus est un exemple.</p>
+    <div class="puces" style="margin-bottom:10px">
+      <button class="puce large vedette" id="btnCam" type="button">Démarrer la caméra</button>
+      <button class="puce large" id="btnOcr" type="button">Lire le numéro imprimé</button>
+      <button class="puce large" id="btnPhoto" type="button">Scanner une photo</button>
+    </div>
+    <input type="file" id="photo" accept="image/*" capture="environment" hidden>
 
-  <div class="controls">
-    <button class="primary" id="btnXlsx" type="button">Exporter en Excel (.xlsx)</button>
-    <button type="button" id="btnCsv">Copier en CSV</button>
-  </div>
+    <div class="avis alerte sorti" id="avisRien" hidden>
+      <strong>Aucun code détecté.</strong>
+      <span id="avisRienTxt">Le QR code n’a pas été lu depuis 5 secondes.</span>
+      Le numéro imprimé sous le QR peut être lu à la place : cadre-le bien à plat dans la mire,
+      puis appuie sur <b>Lire le numéro imprimé</b>.
+    </div>
 
-  <div class="hint">
-    <b>Pour l'avoir comme une app :</b>
-    <ol>
-      <li>Ouvre cette page dans Safari sur l'iPhone.</li>
-      <li>Bouton Partager <span aria-hidden="true">&#8593;</span> &rarr; « Sur l'écran d'accueil ».</li>
-      <li>Elle s'ouvre ensuite en plein écran, avec son icône.</li>
-    </ol>
+    <div class="panneau rentre" id="ocrPanneau" hidden>
+      <h3 id="ocrTitre">Lecture du numéro imprimé</h3>
+      <canvas class="ocr-apercu" id="ocrApercu" width="320" height="240"></canvas>
+      <div class="jauge" id="ocrJauge"><i id="ocrBarre"></i></div>
+      <p class="chapeau" id="ocrEtat" style="margin-bottom:8px">Préparation…</p>
+      <div id="ocrResultat" hidden>
+        <div class="eyebrow" style="text-align:center">Numéro lu — à vérifier avant d’ajouter</div>
+        <div class="ocr-lu" id="ocrLu">—</div>
+        <div class="ligne" style="margin-bottom:8px">
+          <div class="champ">
+            <label for="ocrEdit">Corriger si besoin</label>
+            <input type="text" id="ocrEdit" class="mono" inputmode="numeric" autocomplete="off">
+          </div>
+        </div>
+        <div class="puces">
+          <button class="puce large vedette" id="ocrValider" type="button">Ajouter au relevé</button>
+          <button class="puce large" id="ocrAnnuler" type="button">Annuler</button>
+        </div>
+      </div>
+      <div class="puces" id="ocrAbandon">
+        <button class="puce large" id="ocrStop" type="button">Fermer</button>
+      </div>
+    </div>
+
+    <div class="options">
+      <label class="bascule"><input type="checkbox" id="optDup" checked> Refuser les doublons</label>
+      <label class="bascule"><input type="checkbox" id="optBeep" checked> Bip à chaque scan</label>
+    </div>
+
+    <div class="ligne">
+      <div class="champ">
+        <label for="optLen">Longueur attendue</label>
+        <select id="optLen">
+          <option value="11">11 chiffres</option>
+          <option value="12">12 chiffres</option>
+          <option value="0">peu importe</option>
+        </select>
+      </div>
+      <div class="champ">
+        <label for="lot">Nom du relevé</label>
+        <input type="text" id="lot" autocomplete="off" placeholder="Inventaire">
+      </div>
+    </div>
+
+    <div class="ligne">
+      <div class="champ">
+        <label for="manual">Saisie manuelle</label>
+        <input type="text" id="manual" class="mono" inputmode="numeric" autocomplete="off" placeholder="12345678901">
+      </div>
+      <button class="puce" id="btnAdd" type="button">Ajouter</button>
+    </div>
+
+    <div class="tbl rentre">
+      <table>
+        <thead>
+          <tr><th>N°</th><th>Code</th><th>Heure</th><th class="r">—</th></tr>
+        </thead>
+        <tbody id="log"></tbody>
+      </table>
+    </div>
+
+    <div class="puces">
+      <button class="puce large vedette" id="btnXlsx" type="button">Exporter en Excel</button>
+      <button class="puce large" id="btnCsv" type="button">Copier en CSV</button>
+      <button class="puce" id="btnClear" type="button">Vider</button>
+    </div>
+
+    <div class="panneau rentre" id="exportPanneau" hidden style="margin-top:10px">
+      <h3>Enregistrer le fichier</h3>
+      <p class="chapeau" id="exportEtat" style="margin-bottom:9px"></p>
+      <div class="puces">
+        <a class="puce large vedette" id="exportLien" href="#" download>Enregistrer le classeur</a>
+        <button class="puce large" id="exportFermer" type="button">Fermer</button>
+      </div>
+      <p class="chapeau" style="margin-top:9px; font-size:.78rem">
+        Si le lien ouvre une page illisible au lieu d’enregistrer, garde le doigt appuyé dessus
+        et choisis <b>Télécharger le fichier lié</b> : iOS le range dans Fichiers.
+      </p>
+    </div>
+
+    <p class="pied">
+      <b>Pour l’installer :</b> Safari → Partager → « Sur l’écran d’accueil ».
+      Le relevé reste sur ce téléphone, rien n’est envoyé nulle part.
+    </p>
+
   </div>
 </div>
+</div>
 
+<script src="vendor/jsQR.js"></script>
+<script src="vendor/xlsx.full.min.js"></script>
+<script src="vendor/tesseract/tesseract.min.js"></script>
 <script>
 (function () {
   "use strict";
 
-  var KEY = "scanner-douze.v1";
+  var KEY = "scan2000.v1";
+  var SANS_LECTURE_MS = 5000;
   var entries = [];
-  var settings = { dup: true, beep: true, lot: "" };
+  var settings = { dup: true, beep: true, lot: "", len: 11 };
 
-  var el = function (id) { return document.getElementById(id); };
-  var cam = el("cam"), idle = el("idle"), reticle = el("reticle"), flash = el("flash");
-  var statusEl = el("status"), readout = el("readout"), tally = el("tally");
-  var log = el("log"), emptyNote = el("emptyNote");
-  var btnCam = el("btnCam"), btnPhoto = el("btnPhoto"), photo = el("photo");
+  function el(id) { return document.getElementById(id); }
+  var cam = el("cam"), mire = el("mire"), repos = el("repos"), flash = el("flash");
+  var rien = el("rien"), rienPt = el("rienPt"), avisRien = el("avisRien"), avisRienTxt = el("avisRienTxt");
+  var statut = el("statut"), etat = el("etat"), etatLong = el("etatLong");
+  var compteur = el("compteur"), dit = el("dit");
+  var dernierCode = el("dernierCode"), dernierMeta = el("dernierMeta");
+  var log = el("log");
+  var btnCam = el("btnCam"), btnPhoto = el("btnPhoto"), photo = el("photo"), btnOcr = el("btnOcr");
   var btnAdd = el("btnAdd"), manual = el("manual"), lot = el("lot");
   var btnClear = el("btnClear"), btnXlsx = el("btnXlsx"), btnCsv = el("btnCsv");
-  var optDup = el("optDup"), optBeep = el("optBeep");
+  var optDup = el("optDup"), optBeep = el("optBeep"), optLen = el("optLen");
+  var ocrPanneau = el("ocrPanneau"), ocrApercu = el("ocrApercu"), ocrEtat = el("ocrEtat");
+  var ocrBarre = el("ocrBarre"), ocrJauge = el("ocrJauge"), ocrResultat = el("ocrResultat");
+  var ocrLu = el("ocrLu"), ocrEdit = el("ocrEdit"), ocrValider = el("ocrValider");
+  var ocrAnnuler = el("ocrAnnuler"), ocrStop = el("ocrStop"), ocrAbandon = el("ocrAbandon");
+  var ocrTitre = el("ocrTitre");
+  var exportPanneau = el("exportPanneau"), exportLien = el("exportLien");
+  var exportEtat = el("exportEtat"), exportFermer = el("exportFermer");
 
-  /* ---------- storage ---------- */
+  /* ---------- mémoire locale ---------- */
   function load() {
     try {
       var raw = localStorage.getItem(KEY);
@@ -529,31 +532,36 @@
         settings.dup = data.settings.dup !== false;
         settings.beep = data.settings.beep !== false;
         settings.lot = typeof data.settings.lot === "string" ? data.settings.lot : "";
+        if (typeof data.settings.len === "number") settings.len = data.settings.len;
       }
     } catch (e) { /* stockage indisponible : on continue en mémoire */ }
   }
   function save() {
-    try {
-      localStorage.setItem(KEY, JSON.stringify({ entries: entries, settings: settings }));
-    } catch (e) { /* idem */ }
+    try { localStorage.setItem(KEY, JSON.stringify({ entries: entries, settings: settings })); }
+    catch (e) { /* idem */ }
   }
 
-  /* ---------- 12-digit extraction ---------- */
+  /* ---------- extraction du numéro ---------- */
   function extract(raw) {
     var text = String(raw == null ? "" : raw).trim();
     var runs = text.split(/\D+/).filter(Boolean);
+    var want = settings.len;
     var i;
-    for (i = 0; i < runs.length; i++) {
-      if (runs[i].length === 12) return { code: runs[i], ok: true, raw: text };
+    if (want) {
+      for (i = 0; i < runs.length; i++) {
+        if (runs[i].length === want) return { code: runs[i], ok: true, raw: text };
+      }
     }
-    var all = runs.join("");
-    if (all.length === 12) return { code: all, ok: true, raw: text };
-    return { code: all || text, ok: false, raw: text };
+    var tout = runs.join("");
+    if (!want) return { code: tout || text, ok: !!tout, raw: text };
+    if (tout.length === want) return { code: tout, ok: true, raw: text };
+    return { code: tout || text, ok: false, raw: text };
   }
+  function attendu() { return settings.len ? settings.len + " chiffres" : "longueur libre"; }
 
-  /* ---------- feedback ---------- */
+  /* ---------- retours ---------- */
   var audio = null;
-  function beep(bad) {
+  function beep(mauvais) {
     if (!settings.beep) return;
     try {
       var Ctx = window.AudioContext || window.webkitAudioContext;
@@ -562,165 +570,168 @@
       if (audio.state === "suspended") audio.resume();
       var osc = audio.createOscillator(), gain = audio.createGain();
       osc.type = "square";
-      osc.frequency.value = bad ? 320 : 1180;
+      osc.frequency.value = mauvais ? 320 : 1180;
       gain.gain.setValueAtTime(0.0001, audio.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.18, audio.currentTime + 0.01);
-      gain.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + (bad ? 0.28 : 0.12));
+      gain.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + (mauvais ? 0.28 : 0.12));
       osc.connect(gain); gain.connect(audio.destination);
-      osc.start(); osc.stop(audio.currentTime + (bad ? 0.3 : 0.14));
-    } catch (e) { /* pas de son sur cet appareil */ }
+      osc.start(); osc.stop(audio.currentTime + (mauvais ? 0.3 : 0.14));
+    } catch (e) { /* pas de son ici */ }
   }
-  function blink() {
-    flash.classList.remove("on");
-    void flash.offsetWidth;
-    flash.classList.add("on");
-  }
-  var toastTimer = null, toastEl = null;
-  function toast(msg) {
-    if (!toastEl) {
-      toastEl = document.createElement("div");
-      toastEl.className = "toast";
-      toastEl.setAttribute("role", "status");
-      document.body.appendChild(toastEl);
-    }
-    toastEl.textContent = msg;
-    toastEl.hidden = false;
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () { toastEl.hidden = true; }, 2600);
-  }
-  function setStatus(text, mode) {
-    statusEl.textContent = text;
-    readout.className = "readout" + (mode ? " " + mode : "");
+  function blink() { flash.classList.remove("on"); void flash.offsetWidth; flash.classList.add("on"); }
+  function dire(msg) { dit.textContent = msg; }
+  function setStatut(texte, mode) {
+    statut.textContent = texte;
+    etat.className = "etat-barre" + (mode ? " " + mode : "");
   }
 
-  /* ---------- entries ---------- */
-  function counts() {
+  /* ---------- alerte « aucun code détecté » ---------- */
+  var horloge = null;
+  function armerVeille() {
+    desarmerVeille();
+    horloge = setTimeout(montrerRien, SANS_LECTURE_MS);
+  }
+  function desarmerVeille() { if (horloge) { clearTimeout(horloge); horloge = null; } }
+  function montrerRien() {
+    if (!stream) return;
+    var s = Math.round(SANS_LECTURE_MS / 1000);
+    rien.hidden = false;
+    avisRien.hidden = false;
+    rienPt.textContent = "Rien lu depuis " + s + " secondes. Rapproche-toi, stabilise, "
+      + "ou fais lire le numéro imprimé.";
+    avisRienTxt.textContent = "Le QR code n’a pas été lu depuis " + s + " secondes.";
+    setStatut("Aucun code détecté", "err");
+    dire("Je ne vois aucun QR code. Le numéro imprimé en dessous, je peux le lire : "
+       + "cadre-le bien à plat dans la mire et appuie sur « Lire le numéro imprimé ».");
+    beep(true);
+  }
+  function cacherRien() { rien.hidden = true; avisRien.hidden = true; }
+
+  /* ---------- relevé ---------- */
+  function compte() {
     var map = {};
     entries.forEach(function (e) { map[e.code] = (map[e.code] || 0) + 1; });
     return map;
   }
   function add(raw, source) {
-    var parsed = extract(raw);
-    if (!parsed.code) { setStatus("QR vide, rien à enregistrer", "err"); beep(true); return false; }
-    if (settings.dup) {
-      var seen = entries.some(function (e) { return e.code === parsed.code; });
-      if (seen) {
-        setStatus(parsed.code + " — déjà dans le relevé", "err");
-        beep(true);
-        toast("Doublon ignoré : " + parsed.code);
-        return false;
-      }
+    var p = extract(raw);
+    if (!p.code) { setStatut("Rien à enregistrer", "err"); beep(true); return false; }
+    if (settings.dup && entries.some(function (e) { return e.code === p.code; })) {
+      setStatut(p.code + " — déjà relevé", "err");
+      dire("Ce code est déjà dans le relevé : " + p.code + ". Je ne l’ajoute pas deux fois.");
+      beep(true);
+      return false;
     }
-    entries.push({
-      code: parsed.code,
-      raw: parsed.raw,
-      ok: parsed.ok,
-      ts: Date.now(),
-      src: source
-    });
+    entries.push({ code: p.code, raw: p.raw, ok: p.ok, ts: Date.now(), src: source });
     save();
     render();
     blink();
-    beep(!parsed.ok);
-    setStatus(parsed.code + (parsed.ok ? " — enregistré" : " — enregistré (pas 12 chiffres)"), parsed.ok ? "live" : "err");
-    if (!parsed.ok) toast("Attention : " + parsed.code.length + " chiffres au lieu de 12");
+    beep(!p.ok);
+    cacherRien();
+    setStatut(p.code + " — enregistré", p.ok ? "live" : "err");
+    dire(p.ok
+      ? "Code n° " + entries.length + " enregistré : " + p.code + "."
+      : "Enregistré, mais " + p.code.length + " chiffres au lieu de " + settings.len + " : à vérifier.");
     return true;
   }
-  function fmtTime(ts) {
-    var d = new Date(ts);
-    return d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  function heure(ts) {
+    return new Date(ts).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
   }
-  function fmtDate(ts) {
-    var d = new Date(ts);
-    return d.toLocaleDateString("fr-FR");
-  }
+  function jour(ts) { return new Date(ts).toLocaleDateString("fr-FR"); }
 
   function render() {
-    tally.textContent = String(entries.length);
-    log.textContent = "";
-    var dups = counts();
+    var n = entries.length;
+    compteur.textContent = "";
+    String(Math.min(n, 999)).padStart(3, "0").split("").forEach(function (c) {
+      var b = document.createElement("b");
+      b.textContent = c;
+      compteur.appendChild(b);
+    });
+    etatLong.textContent = attendu();
 
-    if (!entries.length) {
-      var li = document.createElement("li");
-      li.className = "sample";
-      li.innerHTML =
-        '<span class="seq">1</span>' +
-        '<span class="val"><span class="code">401234567890</span>' +
-        '<span class="meta">exemple &middot; 09:41:02</span></span>';
-      log.appendChild(li);
-      emptyNote.hidden = false;
-      btnXlsx.disabled = true;
-      btnCsv.disabled = true;
-      btnClear.disabled = true;
+    log.textContent = "";
+    if (!n) {
+      var tr = document.createElement("tr");
+      tr.className = "exemple";
+      tr.innerHTML = '<td class="num">1</td><td class="code">12345678901</td>'
+        + '<td class="num">09:41:02</td><td class="r">exemple</td>';
+      log.appendChild(tr);
+      dernierCode.textContent = "En attente du premier scan";
+      dernierMeta.textContent = "le relevé est gardé sur ce téléphone";
+      btnXlsx.disabled = true; btnCsv.disabled = true; btnClear.disabled = true;
       return;
     }
-    emptyNote.hidden = true;
-    btnXlsx.disabled = false;
-    btnCsv.disabled = false;
-    btnClear.disabled = false;
+    btnXlsx.disabled = false; btnCsv.disabled = false; btnClear.disabled = false;
+    var dernier = entries[n - 1];
+    dernierCode.textContent = dernier.code;
+    dernierMeta.textContent = jour(dernier.ts) + " · " + heure(dernier.ts) + " · " + dernier.src;
 
+    var doublons = compte();
     entries.slice().reverse().forEach(function (e, idx) {
-      var n = entries.length - idx;
-      var li = document.createElement("li");
+      var tr = document.createElement("tr");
+      if (!e.ok) tr.className = "s-warn";
 
-      var seq = document.createElement("span");
-      seq.className = "seq";
-      seq.textContent = String(n);
+      var tdN = document.createElement("td");
+      tdN.className = "num";
+      tdN.textContent = String(n - idx);
 
-      var val = document.createElement("span");
-      val.className = "val";
-      var code = document.createElement("span");
-      code.className = "code";
-      code.textContent = e.code;
-      var meta = document.createElement("span");
-      meta.className = "meta";
-      meta.appendChild(document.createTextNode(fmtTime(e.ts)));
+      var tdC = document.createElement("td");
+      tdC.className = "code";
+      tdC.appendChild(document.createTextNode(e.code));
       if (!e.ok) {
-        var w = document.createElement("span");
-        w.className = "chip warn";
-        w.textContent = e.code.length + " chiffres";
-        meta.appendChild(w);
+        var j = document.createElement("span");
+        j.className = "jeton j-warn";
+        j.textContent = e.code.length + " ch.";
+        tdC.appendChild(j);
       }
-      if (dups[e.code] > 1) {
+      if (doublons[e.code] > 1) {
         var d = document.createElement("span");
-        d.className = "chip dup";
-        d.textContent = "x" + dups[e.code];
-        meta.appendChild(d);
+        d.className = "jeton j-neutre";
+        d.textContent = "x" + doublons[e.code];
+        tdC.appendChild(d);
       }
-      val.appendChild(code);
-      val.appendChild(meta);
+      if (e.src === "ocr") {
+        var o = document.createElement("span");
+        o.className = "jeton j-ocr";
+        o.textContent = "lu";
+        tdC.appendChild(o);
+      }
 
-      var kill = document.createElement("button");
-      kill.className = "kill";
-      kill.type = "button";
-      kill.textContent = "Supprimer";
-      kill.setAttribute("aria-label", "Supprimer " + e.code);
-      kill.addEventListener("click", function () {
-        entries.splice(entries.length - 1 - idx, 1);
-        save();
-        render();
+      var tdH = document.createElement("td");
+      tdH.className = "num";
+      tdH.textContent = heure(e.ts);
+
+      var tdX = document.createElement("td");
+      tdX.className = "r";
+      var x = document.createElement("button");
+      x.className = "x";
+      x.type = "button";
+      x.textContent = "×";
+      x.setAttribute("aria-label", "Supprimer " + e.code);
+      x.addEventListener("click", function () {
+        entries.splice(n - 1 - idx, 1);
+        save(); render();
       });
+      tdX.appendChild(x);
 
-      li.appendChild(seq);
-      li.appendChild(val);
-      li.appendChild(kill);
-      log.appendChild(li);
+      tr.appendChild(tdN); tr.appendChild(tdC); tr.appendChild(tdH); tr.appendChild(tdX);
+      log.appendChild(tr);
     });
   }
 
-  /* ---------- camera ---------- */
+  /* ---------- caméra ---------- */
   var stream = null, rafId = null, frame = 0, busy = false, detector = null;
   var canvas = document.createElement("canvas");
   var ctx = canvas.getContext("2d", { willReadFrequently: true });
-  var lastCode = "", lastAt = 0;
+  var dernierLu = "", dernierT = 0;
 
-  function hit(raw) {
-    var now = Date.now();
-    var parsed = extract(raw);
-    if (parsed.code === lastCode && now - lastAt < 2500) return;
-    lastCode = parsed.code;
-    lastAt = now;
+  function touche(raw) {
+    var t = Date.now();
+    var p = extract(raw);
+    if (p.code === dernierLu && t - dernierT < 2500) return;
+    dernierLu = p.code; dernierT = t;
     add(raw, "caméra");
+    armerVeille();
   }
 
   function tick() {
@@ -734,27 +745,27 @@
       busy = true;
       detector.detect(cam).then(function (res) {
         busy = false;
-        if (res && res.length && res[0].rawValue) hit(res[0].rawValue);
+        if (res && res.length && res[0].rawValue) touche(res[0].rawValue);
       })["catch"](function () { busy = false; detector = null; });
       return;
     }
     if (typeof jsQR !== "function") return;
-    var scale = Math.min(1, 640 / Math.max(cam.videoWidth, cam.videoHeight));
-    canvas.width = Math.round(cam.videoWidth * scale);
-    canvas.height = Math.round(cam.videoHeight * scale);
+    var k = Math.min(1, 640 / Math.max(cam.videoWidth, cam.videoHeight));
+    canvas.width = Math.round(cam.videoWidth * k);
+    canvas.height = Math.round(cam.videoHeight * k);
     ctx.drawImage(cam, 0, 0, canvas.width, canvas.height);
     var img = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    var found = jsQR(img.data, img.width, img.height, { inversionAttempts: "dontInvert" });
-    if (found && found.data) hit(found.data);
+    var trouve = jsQR(img.data, img.width, img.height, { inversionAttempts: "dontInvert" });
+    if (trouve && trouve.data) touche(trouve.data);
   }
 
   function startCam() {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      setStatus("Caméra live indisponible ici — utilise « Scanner une photo »", "err");
-      toast("Caméra live indisponible : passe par la photo");
+      setStatut("Caméra indisponible ici", "err");
+      dire("Cet appareil ne me donne pas la caméra. Passe par « Scanner une photo ».");
       return;
     }
-    setStatus("Ouverture de la caméra…");
+    setStatut("Ouverture de la caméra…");
     navigator.mediaDevices.getUserMedia({
       video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
       audio: false
@@ -762,75 +773,228 @@
       stream = s;
       cam.srcObject = s;
       cam.hidden = false;
-      reticle.hidden = false;
-      idle.hidden = true;
+      mire.hidden = false;
+      repos.hidden = true;
       btnCam.textContent = "Arrêter la caméra";
-      btnCam.classList.remove("primary");
-      setStatus("Scan en cours — vise le QR code", "live");
+      btnCam.classList.remove("vedette");
+      setStatut("Scan en cours", "live");
+      dire("Je scanne. Vise le QR code, je m’occupe du reste.");
       if (window.BarcodeDetector) {
-        try { detector = new window.BarcodeDetector({ formats: ["qr_code"] }); } catch (e) { detector = null; }
+        try { detector = new window.BarcodeDetector({ formats: ["qr_code"] }); }
+        catch (e) { detector = null; }
       }
       return cam.play()["catch"](function () {});
     }).then(function () {
       if (rafId) cancelAnimationFrame(rafId);
       rafId = requestAnimationFrame(tick);
+      armerVeille();
     })["catch"](function (err) {
-      var name = err && err.name ? err.name : "";
-      var msg = name === "NotAllowedError"
-        ? "Accès caméra refusé — autorise-le, ou utilise « Scanner une photo »"
-        : "Caméra inaccessible ici — utilise « Scanner une photo »";
-      setStatus(msg, "err");
-      toast(msg);
+      var nom = err && err.name ? err.name : "";
+      setStatut(nom === "NotAllowedError" ? "Accès caméra refusé" : "Caméra inaccessible", "err");
+      dire(nom === "NotAllowedError"
+        ? "iOS a refusé la caméra. Réglages → Safari → Caméra → Autoriser, puis recharge la page."
+        : "Je n’arrive pas à ouvrir la caméra ici. « Scanner une photo » fonctionne quand même.");
     });
   }
 
   function stopCam() {
+    desarmerVeille();
     if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
     if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; }
     cam.srcObject = null;
     cam.hidden = true;
-    reticle.hidden = true;
-    idle.hidden = false;
-    detector = null;
-    busy = false;
+    mire.hidden = true;
+    repos.hidden = false;
+    cacherRien();
+    detector = null; busy = false;
     btnCam.textContent = "Démarrer la caméra";
-    btnCam.classList.add("primary");
-    setStatus("En attente");
+    btnCam.classList.add("vedette");
+    setStatut("Prêt");
   }
 
-  btnCam.addEventListener("click", function () {
-    if (stream) stopCam(); else startCam();
+  btnCam.addEventListener("click", function () { if (stream) stopCam(); else startCam(); });
+
+  /* ---------- lecture du numéro imprimé (OCR) ---------- */
+  var worker = null, ocrEnCours = false, ocrAnnule = false;
+  var ocrDispo = typeof Tesseract !== "undefined";
+  if (!ocrDispo) btnOcr.hidden = true;
+
+  function cadre(source, largeurSrc, hauteurSrc) {
+    /* carré central de la mire, agrandi 2x : c'est là que se trouve le numéro
+       imprimé quand l'utilisateur cadre comme demandé. */
+    var cote = Math.round(Math.min(largeurSrc, hauteurSrc) * 0.72);
+    var sx = Math.round((largeurSrc - cote) / 2);
+    var sy = Math.round((hauteurSrc - cote) / 2);
+    var c = document.createElement("canvas");
+    c.width = cote * 2; c.height = cote * 2;
+    var cc = c.getContext("2d", { willReadFrequently: true });
+    cc.imageSmoothingQuality = "high";
+    cc.drawImage(source, sx, sy, cote, cote, 0, 0, c.width, c.height);
+    /* gris + étirement de contraste : la reconnaissance y gagne beaucoup */
+    var d = cc.getImageData(0, 0, c.width, c.height);
+    var px = d.data, i, g, min = 255, max = 0;
+    for (i = 0; i < px.length; i += 4) {
+      g = (px[i] * 0.299 + px[i + 1] * 0.587 + px[i + 2] * 0.114) | 0;
+      px[i] = px[i + 1] = px[i + 2] = g;
+      if (g < min) min = g;
+      if (g > max) max = g;
+    }
+    var span = Math.max(1, max - min);
+    for (i = 0; i < px.length; i += 4) {
+      g = Math.max(0, Math.min(255, Math.round((px[i] - min) * 255 / span)));
+      px[i] = px[i + 1] = px[i + 2] = g;
+    }
+    cc.putImageData(d, 0, 0);
+    return c;
+  }
+
+  function montrerApercu(c) {
+    ocrApercu.width = 320;
+    ocrApercu.height = Math.round(320 * (c.height / c.width));
+    ocrApercu.getContext("2d").drawImage(c, 0, 0, ocrApercu.width, ocrApercu.height);
+  }
+  function progression(p) {
+    ocrBarre.style.width = Math.round(Math.max(0, Math.min(1, p)) * 100) + "%";
+  }
+  function ouvrirOcr(titre) {
+    ocrPanneau.hidden = false;
+    ocrTitre.textContent = titre;
+    ocrResultat.hidden = true;
+    ocrAbandon.hidden = false;
+    ocrJauge.hidden = false;
+    progression(0);
+    ocrPanneau.scrollIntoView({ block: "center", behavior: "smooth" });
+  }
+  function fermerOcr() { ocrPanneau.hidden = true; ocrAnnule = true; ocrEnCours = false; }
+
+  function obtenirWorker() {
+    if (worker) return Promise.resolve(worker);
+    ocrEtat.textContent = "Chargement du lecteur de chiffres (une seule fois, environ 6 Mo)…";
+    return Tesseract.createWorker("eng", 1, {
+      workerPath: "vendor/tesseract/worker.min.js",
+      corePath: "vendor/tesseract/",
+      langPath: "vendor/tesseract/",
+      gzip: true,
+      logger: function (m) {
+        if (m && m.status === "recognizing text") progression(m.progress);
+      }
+    }).then(function (w) {
+      return w.setParameters({
+        tessedit_char_whitelist: "0123456789",
+        tessedit_pageseg_mode: "6"
+      }).then(function () { worker = w; return w; });
+    });
+  }
+
+  function meilleurNombre(texte) {
+    var runs = String(texte || "").split(/\D+/).filter(Boolean);
+    if (!runs.length) return "";
+    var want = settings.len, i;
+    if (want) {
+      for (i = 0; i < runs.length; i++) if (runs[i].length === want) return runs[i];
+    }
+    runs.sort(function (a, b) { return b.length - a.length; });
+    return runs[0];
+  }
+
+  function lireImage(source, largeur, hauteur, titre) {
+    if (ocrEnCours) return;
+    ocrEnCours = true; ocrAnnule = false;
+    ouvrirOcr(titre);
+    var crop = cadre(source, largeur, hauteur);
+    montrerApercu(crop);
+
+    obtenirWorker().then(function (w) {
+      if (ocrAnnule) return null;
+      ocrEtat.textContent = "Lecture en cours…";
+      return w.recognize(crop);
+    }).then(function (res) {
+      ocrEnCours = false;
+      if (!res || ocrAnnule) return;
+      progression(1);
+      ocrJauge.hidden = true;
+      var nombre = meilleurNombre(res.data && res.data.text ? res.data.text : "");
+      if (!nombre) {
+        ocrResultat.hidden = true;
+        ocrAbandon.hidden = false;
+        ocrEtat.textContent = "Rien lu sur cette image. Rapproche-toi, évite les reflets, "
+          + "et cadre le numéro seul dans la mire.";
+        dire("Je n’ai pas réussi à lire les chiffres. Recadre sur le numéro seul et réessaie.");
+        beep(true);
+        return;
+      }
+      ocrAbandon.hidden = true;
+      ocrEtat.textContent = settings.len && nombre.length !== settings.len
+        ? "Attention : " + nombre.length + " chiffres lus au lieu de " + settings.len + ". À corriger."
+        : "Vérifie chiffre par chiffre : une lecture optique n’est jamais sûre à 100 %.";
+      ocrLu.textContent = nombre;
+      ocrEdit.value = nombre;
+      ocrResultat.hidden = false;
+      dire("J’ai lu " + nombre + ". Compare avec l’étiquette avant de valider.");
+    })["catch"](function () {
+      ocrEnCours = false;
+      ocrJauge.hidden = true;
+      ocrResultat.hidden = true;
+      ocrAbandon.hidden = false;
+      ocrEtat.textContent = "Le lecteur de chiffres n’a pas pu démarrer"
+        + (navigator.onLine ? "." : " (hors ligne, et il n’a jamais été chargé).")
+        + " La saisie manuelle reste disponible.";
+      dire("Le lecteur de chiffres n’a pas démarré. Tape le numéro à la main.");
+    });
+  }
+
+  btnOcr.addEventListener("click", function () {
+    if (!stream) {
+      ouvrirOcr("Lecture du numéro imprimé");
+      ocrJauge.hidden = true;
+      ocrEtat.textContent = "Démarre d’abord la caméra, ou passe par « Scanner une photo ».";
+      return;
+    }
+    lireImage(cam, cam.videoWidth, cam.videoHeight, "Lecture du numéro imprimé");
+  });
+  ocrStop.addEventListener("click", fermerOcr);
+  ocrAnnuler.addEventListener("click", fermerOcr);
+  ocrValider.addEventListener("click", function () {
+    var v = ocrEdit.value.trim();
+    if (!v) return;
+    if (add(v, "ocr")) fermerOcr();
   });
 
-  /* ---------- photo fallback ---------- */
+  /* ---------- photo ---------- */
   btnPhoto.addEventListener("click", function () { photo.click(); });
   photo.addEventListener("change", function () {
     var file = photo.files && photo.files[0];
     photo.value = "";
     if (!file) return;
-    if (typeof jsQR !== "function") { setStatus("Décodeur indisponible (hors ligne ?)", "err"); return; }
-    setStatus("Lecture de la photo…");
+    setStatut("Lecture de la photo…");
     var url = URL.createObjectURL(file);
     var img = new Image();
     img.onload = function () {
-      var scale = Math.min(1, 1400 / Math.max(img.width, img.height));
-      canvas.width = Math.round(img.width * scale);
-      canvas.height = Math.round(img.height * scale);
+      var k = Math.min(1, 1400 / Math.max(img.width, img.height));
+      canvas.width = Math.round(img.width * k);
+      canvas.height = Math.round(img.height * k);
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      var data = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      var found = jsQR(data.data, data.width, data.height, { inversionAttempts: "attemptBoth" });
+      var trouve = null;
+      if (typeof jsQR === "function") {
+        var d = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        trouve = jsQR(d.data, d.width, d.height, { inversionAttempts: "attemptBoth" });
+      }
       URL.revokeObjectURL(url);
-      if (found && found.data) add(found.data, "photo");
-      else { setStatus("Aucun QR code trouvé sur la photo", "err"); beep(true); }
+      if (trouve && trouve.data) { add(trouve.data, "photo"); return; }
+      setStatut("Aucun QR code sur la photo", "err");
+      beep(true);
+      if (ocrDispo) {
+        dire("Pas de QR code sur cette photo. J’essaie de lire le numéro imprimé.");
+        lireImage(canvas, canvas.width, canvas.height, "Lecture du numéro sur la photo");
+      } else {
+        dire("Pas de QR code sur cette photo, et le lecteur de chiffres n’est pas disponible ici.");
+      }
     };
-    img.onerror = function () {
-      URL.revokeObjectURL(url);
-      setStatus("Image illisible", "err");
-    };
+    img.onerror = function () { URL.revokeObjectURL(url); setStatut("Image illisible", "err"); };
     img.src = url;
   });
 
-  /* ---------- manual ---------- */
+  /* ---------- saisie manuelle ---------- */
   function addManual() {
     var v = manual.value.trim();
     if (!v) return;
@@ -843,17 +1007,25 @@
 
   /* ---------- options ---------- */
   optDup.addEventListener("change", function () { settings.dup = optDup.checked; save(); });
-  optBeep.addEventListener("change", function () { settings.beep = optBeep.checked; save(); if (optBeep.checked) beep(false); });
+  optBeep.addEventListener("change", function () {
+    settings.beep = optBeep.checked; save();
+    if (optBeep.checked) beep(false);
+  });
+  optLen.addEventListener("change", function () {
+    settings.len = parseInt(optLen.value, 10) || 0;
+    save(); render();
+    dire(settings.len
+      ? "J’attends maintenant des codes à " + settings.len + " chiffres."
+      : "Je n’impose plus de longueur : tout ce qui est lu est accepté.");
+  });
   lot.addEventListener("input", function () { settings.lot = lot.value; save(); });
 
   btnClear.addEventListener("click", function () {
     if (!entries.length) return;
-    if (!window.confirm("Effacer les " + entries.length + " code(s) du relevé ? Pense à exporter avant.")) return;
-    entries = [];
-    lastCode = "";
-    save();
-    render();
-    toast("Relevé vidé");
+    if (!window.confirm("Effacer les " + entries.length + " code(s) ? Pense à exporter avant.")) return;
+    entries = []; dernierLu = "";
+    save(); render();
+    dire("Relevé vidé. On repart de zéro.");
   });
 
   /* ---------- export ---------- */
@@ -861,96 +1033,114 @@
     return String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "")
       .replace(/[^A-Za-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
   }
-  function filename() {
+  function nomFichier() {
     var d = new Date();
-    var stamp = d.getFullYear() + "-" +
-      String(d.getMonth() + 1).padStart(2, "0") + "-" +
-      String(d.getDate()).padStart(2, "0");
-    var name = slug(lot.value) || "scans";
-    return name + "-" + stamp + ".xlsx";
+    var stamp = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0")
+      + "-" + String(d.getDate()).padStart(2, "0");
+    return (slug(lot.value) || "scans") + "-" + stamp + ".xlsx";
   }
-  function table() {
-    var rows = [["N°", "Code", "Date", "Heure", "Contenu du QR", "Statut"]];
+  function tableau() {
+    var rows = [["N°", "Code", "Date", "Heure", "Source", "Contenu du QR", "Statut"]];
     entries.forEach(function (e, i) {
-      rows.push([
-        i + 1,
-        e.code,
-        fmtDate(e.ts),
-        fmtTime(e.ts),
-        e.raw,
-        e.ok ? "OK" : e.code.length + " chiffres"
-      ]);
+      rows.push([i + 1, e.code, jour(e.ts), heure(e.ts), e.src, e.raw,
+        e.ok ? "OK" : e.code.length + " chiffres"]);
     });
     return rows;
   }
 
-  function downloadFile(blob, name) {
-    var a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = name;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
-    toast("Fichier Excel prêt : " + name);
+  /* trois chemins, du plus propre au plus rustique, parce qu'iOS refuse
+     silencieusement le téléchargement direct selon le contexte. */
+  function enregistrer(blob, nom) {
+    if (window.claude && typeof window.claude.use === "function") {
+      window.claude.use("downloads").then(function (dl) {
+        if (!dl) { partager(blob, nom); return; }
+        dl.save({ filename: nom, data: blob }).then(function () {
+          dire("Classeur enregistré : " + nom + ".");
+        })["catch"](function (err) {
+          if (err && err.code === "declined") { dire("Export annulé."); return; }
+          partager(blob, nom);
+        });
+      })["catch"](function () { partager(blob, nom); });
+      return;
+    }
+    partager(blob, nom);
   }
-  function saveFile(blob, name) {
-    var file = null;
-    try { file = new File([blob], name, { type: blob.type }); } catch (e) { file = null; }
-    if (file && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-      navigator.share({ files: [file], title: name }).then(function () {
-        toast("Fichier transmis : " + name);
+  function partager(blob, nom) {
+    var f = null;
+    try { f = new File([blob], nom, { type: blob.type }); } catch (e) { f = null; }
+    if (f && navigator.share && navigator.canShare && navigator.canShare({ files: [f] })) {
+      navigator.share({ files: [f], title: nom }).then(function () {
+        dire("Classeur transmis : " + nom + ". Choisis « Enregistrer dans Fichiers » pour le garder.");
       })["catch"](function (err) {
-        if (err && err.name === "AbortError") return;
-        downloadFile(blob, name);
+        if (err && err.name === "AbortError") { dire("Partage annulé."); return; }
+        lienDeSecours(blob, nom, "Le partage a échoué.");
       });
       return;
     }
-    downloadFile(blob, name);
+    lienDeSecours(blob, nom, "Le partage de fichiers n’est pas disponible dans ce navigateur.");
   }
+  var urlEnCours = null;
+  function lienDeSecours(blob, nom, pourquoi) {
+    if (urlEnCours) URL.revokeObjectURL(urlEnCours);
+    urlEnCours = URL.createObjectURL(blob);
+    exportLien.href = urlEnCours;
+    exportLien.setAttribute("download", nom);
+    exportLien.textContent = "Enregistrer " + nom;
+    exportEtat.textContent = pourquoi + " Le classeur est prêt : "
+      + Math.max(1, Math.round(blob.size / 1024)) + " Ko.";
+    exportPanneau.hidden = false;
+    exportPanneau.scrollIntoView({ block: "center", behavior: "smooth" });
+    dire("Le classeur est prêt, mais ce navigateur ne veut pas l’enregistrer tout seul. "
+       + "Utilise le lien qui vient d’apparaître.");
+  }
+  exportFermer.addEventListener("click", function () { exportPanneau.hidden = true; });
 
   btnXlsx.addEventListener("click", function () {
     if (!entries.length) return;
-    if (typeof XLSX === "undefined") { toast("Bibliothèque Excel non chargée — vérifie la connexion"); return; }
-    var ws = XLSX.utils.aoa_to_sheet(table());
-    ws["!cols"] = [{ wch: 5 }, { wch: 16 }, { wch: 12 }, { wch: 10 }, { wch: 36 }, { wch: 14 }];
+    if (typeof XLSX === "undefined") {
+      dire("La bibliothèque Excel n’est pas chargée. Utilise « Copier en CSV ».");
+      return;
+    }
+    var ws = XLSX.utils.aoa_to_sheet(tableau());
+    ws["!cols"] = [{ wch: 5 }, { wch: 16 }, { wch: 12 }, { wch: 10 }, { wch: 10 },
+      { wch: 34 }, { wch: 14 }];
     var wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Scans");
-    var buf = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-    var blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-    var name = filename();
-
-    saveFile(blob, name);
+    var buf = XLSX.write(wb, { bookType: "xlsx", type: "array", compression: true });
+    enregistrer(new Blob([buf], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    }), nomFichier());
   });
 
   btnCsv.addEventListener("click", function () {
     if (!entries.length) return;
-    var csv = table().map(function (r) {
+    var csv = "﻿" + tableau().map(function (r) {
       return r.map(function (c) {
         var s = String(c);
         return /[";\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
       }).join(";");
     }).join("\r\n");
-    var done = function () { toast("CSV copié — colle-le dans Excel"); };
+    var ok = function () { dire("CSV copié. Colle-le directement dans Excel."); };
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(csv).then(done)["catch"](function () { legacyCopy(csv, done); });
-    } else legacyCopy(csv, done);
+      navigator.clipboard.writeText(csv).then(ok)["catch"](function () { copieVieille(csv, ok); });
+    } else copieVieille(csv, ok);
   });
-  function legacyCopy(text, done) {
+  function copieVieille(texte, ok) {
     var ta = document.createElement("textarea");
-    ta.value = text;
+    ta.value = texte;
     ta.setAttribute("readonly", "");
     ta.style.position = "fixed";
     ta.style.top = "-1000px";
     document.body.appendChild(ta);
     ta.select();
-    ta.setSelectionRange(0, text.length);
-    var ok = false;
-    try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+    ta.setSelectionRange(0, texte.length);
+    var fait = false;
+    try { fait = document.execCommand("copy"); } catch (e) { fait = false; }
     ta.remove();
-    if (ok) done(); else toast("Copie refusée par le navigateur");
+    if (fait) ok(); else dire("Le navigateur a refusé la copie.");
   }
 
-  /* ---------- lifecycle ---------- */
+  /* ---------- cycle de vie ---------- */
   document.addEventListener("visibilitychange", function () {
     if (document.hidden && stream) stopCam();
   });
@@ -959,9 +1149,13 @@
   load();
   optDup.checked = settings.dup;
   optBeep.checked = settings.beep;
+  optLen.value = String(settings.len);
   lot.value = settings.lot;
   render();
-  if (entries.length) setStatus(entries.length + " code(s) en mémoire");
+  if (entries.length) {
+    setStatut(entries.length + " code(s) en mémoire");
+    dire("Reprise du relevé : " + entries.length + " code(s) déjà enregistrés.");
+  }
 
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", function () {
@@ -970,6 +1164,5 @@
   }
 })();
 </script>
-
 </body>
 </html>

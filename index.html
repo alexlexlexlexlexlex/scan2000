@@ -1,0 +1,975 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Scanne des QR codes a 12 chiffres et exporte le releve en fichier Excel.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Scanner 12">
+<meta name="theme-color" content="#F1F3F1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0F1214" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<style>
+  :root {
+    color-scheme: light dark;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  img { max-width: 100%; }
+  [hidden] { display: none !important; }
+</style>
+<title>Scanner Douze</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+Condensed:wght@600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+  :root {
+    --bg: #F1F3F1;
+    --surface: #FFFFFF;
+    --surface-2: #E6E9E6;
+    --line: #D2D7D3;
+    --line-strong: #B6BDB8;
+    --ink: #14181A;
+    --ink-2: #5A625E;
+    --ink-3: #868F8A;
+    --accent: #D9491C;
+    --accent-ink: #FFFFFF;
+    --ok: #16764F;
+    --ok-soft: #DCEFE5;
+    --warn: #8A5B06;
+    --warn-soft: #F6EBD2;
+    --scope: #0A0D0E;
+    --scope-line: #2C3437;
+    --scope-ink: #DDE4E1;
+    --shadow: 0 1px 2px rgba(20, 24, 26, .07), 0 6px 18px rgba(20, 24, 26, .06);
+    --radius: 10px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0F1214;
+      --surface: #171B1D;
+      --surface-2: #21272A;
+      --line: #2E3538;
+      --line-strong: #414A4E;
+      --ink: #E8ECEA;
+      --ink-2: #9AA4A1;
+      --ink-3: #78827F;
+      --accent: #F2703F;
+      --accent-ink: #1A0C06;
+      --ok: #5FD2A0;
+      --ok-soft: #123024;
+      --warn: #E0B458;
+      --warn-soft: #33270E;
+      --scope: #07090A;
+      --scope-line: #2C3437;
+      --scope-ink: #DDE4E1;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 6px 18px rgba(0, 0, 0, .3);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0F1214;
+    --surface: #171B1D;
+    --surface-2: #21272A;
+    --line: #2E3538;
+    --line-strong: #414A4E;
+    --ink: #E8ECEA;
+    --ink-2: #9AA4A1;
+    --ink-3: #78827F;
+    --accent: #F2703F;
+    --accent-ink: #1A0C06;
+    --ok: #5FD2A0;
+    --ok-soft: #123024;
+    --warn: #E0B458;
+    --warn-soft: #33270E;
+    --scope: #07090A;
+    --scope-line: #2C3437;
+    --scope-ink: #DDE4E1;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 6px 18px rgba(0, 0, 0, .3);
+  }
+
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 15px;
+    line-height: 1.45;
+    -webkit-text-size-adjust: 100%;
+  }
+  * { box-sizing: border-box; }
+
+  .wrap {
+    max-width: 560px;
+    margin: 0 auto;
+    padding-inline: 16px;
+    padding-block: 0 44px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* ---- header ---- */
+  header.bar {
+    position: sticky;
+    top: env(safe-area-inset-top, 0px);
+    z-index: 30;
+    background: var(--bg);
+    border-bottom: 1px solid var(--line);
+    margin-inline: -16px;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .brand { display: flex; flex-direction: column; min-width: 0; }
+  .brand b {
+    font-family: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif;
+    font-weight: 600;
+    font-size: 17px;
+    letter-spacing: .01em;
+  }
+  .brand span {
+    font-family: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: var(--ink-3);
+  }
+  .tally {
+    margin-left: auto;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-weight: 600;
+    font-size: 20px;
+    font-variant-numeric: tabular-nums;
+    padding: 2px 10px;
+    border: 1px solid var(--line-strong);
+    border-radius: 6px;
+    background: var(--surface);
+  }
+
+  /* ---- buttons ---- */
+  button {
+    font: inherit;
+    font-weight: 600;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+    padding: 10px 14px;
+    cursor: pointer;
+    min-height: 44px;
+    transition: background .12s ease, border-color .12s ease;
+  }
+  button:hover:not(:disabled) { background: var(--surface-2); }
+  button:disabled { opacity: .45; cursor: default; }
+  button:focus-visible, input:focus-visible, label.sw:focus-within {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  button.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+  }
+  button.primary:hover:not(:disabled) { filter: brightness(1.06); background: var(--accent); }
+  button.small { min-height: 36px; padding: 6px 10px; font-size: 13px; }
+  button.ghost { background: transparent; border-color: var(--line); color: var(--ink-2); }
+  button.danger { color: #B33A2B; border-color: var(--line); background: transparent; }
+  :root[data-theme="dark"] button.danger, :root:not([data-theme="light"]) button.danger { color: #F0806E; }
+
+  /* ---- scanner ---- */
+  .scope {
+    position: relative;
+    background: var(--scope);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    overflow: hidden;
+    aspect-ratio: 4 / 3;
+    max-width: 100%;
+    display: grid;
+    place-items: center;
+  }
+  .scope video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    background: var(--scope);
+  }
+  .reticle {
+    position: absolute;
+    width: 62%;
+    aspect-ratio: 1;
+    max-width: 240px;
+    pointer-events: none;
+  }
+  .reticle i {
+    position: absolute;
+    width: 26px;
+    height: 26px;
+    border: 3px solid var(--accent);
+  }
+  .reticle i:nth-child(1) { top: 0; left: 0; border-right: 0; border-bottom: 0; }
+  .reticle i:nth-child(2) { top: 0; right: 0; border-left: 0; border-bottom: 0; }
+  .reticle i:nth-child(3) { bottom: 0; left: 0; border-right: 0; border-top: 0; }
+  .reticle i:nth-child(4) { bottom: 0; right: 0; border-left: 0; border-top: 0; }
+  .sweep {
+    position: absolute;
+    left: 6%; right: 6%;
+    height: 2px;
+    background: var(--accent);
+    opacity: .85;
+    top: 50%;
+    animation: sweep 2.4s ease-in-out infinite;
+  }
+  @keyframes sweep {
+    0%, 100% { transform: translateY(-52px); }
+    50% { transform: translateY(52px); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sweep { animation: none; }
+  }
+  .idle {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    color: var(--scope-ink);
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: center;
+  }
+  .idle p { margin: 0; font-size: 13px; color: #9BA5A2; max-width: 30ch; }
+  .idle .dot {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--accent);
+  }
+  .flash {
+    position: absolute;
+    inset: 0;
+    background: var(--ok);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .flash.on { animation: pop .45s ease-out; }
+  @keyframes pop { 0% { opacity: .55; } 100% { opacity: 0; } }
+
+  .readout {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 26px;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 13px;
+    color: var(--ink-2);
+  }
+  .readout .led {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--line-strong);
+    flex: none;
+  }
+  .readout.live .led { background: var(--ok); }
+  .readout.err .led { background: #C4463A; }
+
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; }
+  .controls > * { flex: 1 1 140px; }
+
+  /* ---- options ---- */
+  .opts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+    padding-block: 2px;
+  }
+  label.sw {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--ink-2);
+    cursor: pointer;
+  }
+  label.sw input { width: 18px; height: 18px; accent-color: var(--accent); }
+
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label {
+    font-family: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: var(--ink-3);
+  }
+  input[type="text"] {
+    font: inherit;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+    padding: 10px 12px;
+    min-height: 44px;
+    width: 100%;
+  }
+  input.mono { font-family: "IBM Plex Mono", ui-monospace, monospace; letter-spacing: .06em; }
+  .row { display: flex; gap: 8px; align-items: flex-end; }
+  .row .field { flex: 1; }
+
+  /* ---- list ---- */
+  .sect-head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    border-top: 1px solid var(--line);
+    padding-top: 14px;
+  }
+  .sect-head h2 {
+    margin: 0;
+    font-family: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    color: var(--ink-3);
+    font-weight: 600;
+  }
+  .sect-head .spacer { margin-left: auto; }
+
+  ol.log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+  ol.log li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 2px;
+    border-bottom: 1px solid var(--line);
+  }
+  ol.log li:first-child { border-top: 1px solid var(--line); }
+  .seq {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-3);
+    width: 2.6ch;
+    text-align: right;
+    flex: none;
+  }
+  .val { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+  .code {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-weight: 600;
+    font-size: 16px;
+    letter-spacing: .08em;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+  .meta { font-size: 12px; color: var(--ink-3); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .chip {
+    font-family: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+  .chip.warn { background: var(--warn-soft); color: var(--warn); }
+  .chip.dup { background: var(--surface-2); color: var(--ink-2); }
+  .kill {
+    flex: none;
+    min-height: 32px;
+    padding: 4px 9px;
+    font-size: 13px;
+    background: transparent;
+    border-color: transparent;
+    color: var(--ink-3);
+  }
+  .kill:hover { background: var(--surface-2); border-color: var(--line); }
+
+  li.sample { opacity: .5; }
+  li.sample .code { font-weight: 500; }
+
+  .note {
+    font-size: 12.5px;
+    color: var(--ink-3);
+    margin: 0;
+  }
+  .toast {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+    z-index: 60;
+    background: var(--ink);
+    color: var(--bg);
+    padding: 10px 16px;
+    border-radius: 999px;
+    font-size: 13.5px;
+    font-weight: 600;
+    box-shadow: var(--shadow);
+    max-width: calc(100% - 32px);
+    text-align: center;
+  }
+  .hint {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    font-size: 13px;
+    color: var(--ink-2);
+  }
+  .hint b { color: var(--ink); }
+  .hint ol { margin: 6px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 3px; }
+  .visually-hidden {
+    position: absolute; width: 1px; height: 1px; overflow: hidden;
+    clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
+  }
+</style>
+
+</head>
+<body>
+<script src="vendor/jsQR.js"></script>
+<script src="vendor/xlsx.full.min.js"></script>
+
+<div class="wrap">
+  <header class="bar">
+    <div class="brand">
+      <b>Scanner Douze</b>
+      <span>QR &rarr; 12 chiffres &rarr; Excel</span>
+    </div>
+    <div class="tally" id="tally" aria-label="Nombre de codes enregistrés">0</div>
+  </header>
+
+  <section>
+    <div class="scope">
+      <video id="cam" playsinline muted autoplay hidden></video>
+      <div class="reticle" id="reticle" hidden><i></i><i></i><i></i><i></i><div class="sweep"></div></div>
+      <div class="idle" id="idle">
+        <div class="dot"></div>
+        <p>Caméra éteinte. Appuie sur <b>Démarrer la caméra</b> et vise un QR code.</p>
+      </div>
+      <div class="flash" id="flash"></div>
+    </div>
+    <div class="readout" id="readout"><span class="led"></span><span id="status">En attente</span></div>
+  </section>
+
+  <div class="controls">
+    <button class="primary" id="btnCam" type="button">Démarrer la caméra</button>
+    <button type="button" id="btnPhoto">Scanner une photo</button>
+  </div>
+  <input type="file" id="photo" accept="image/*" capture="environment" class="visually-hidden">
+
+  <div class="opts">
+    <label class="sw"><input type="checkbox" id="optDup" checked> Refuser les doublons</label>
+    <label class="sw"><input type="checkbox" id="optBeep" checked> Bip à chaque scan</label>
+  </div>
+
+  <div class="row">
+    <div class="field">
+      <label for="manual">Saisie manuelle</label>
+      <input type="text" id="manual" class="mono" inputmode="numeric" autocomplete="off" placeholder="123456789012">
+    </div>
+    <button type="button" id="btnAdd">Ajouter</button>
+  </div>
+
+  <div class="field">
+    <label for="lot">Nom du relevé (sert au nom du fichier)</label>
+    <input type="text" id="lot" autocomplete="off" placeholder="Inventaire">
+  </div>
+
+  <div class="sect-head">
+    <h2>Relevé</h2>
+    <span class="spacer"></span>
+    <button class="small danger" type="button" id="btnClear">Tout effacer</button>
+  </div>
+
+  <ol class="log" id="log"></ol>
+  <p class="note" id="emptyNote">Aucun scan pour l'instant — la ligne ci-dessus est un exemple.</p>
+
+  <div class="controls">
+    <button class="primary" id="btnXlsx" type="button">Exporter en Excel (.xlsx)</button>
+    <button type="button" id="btnCsv">Copier en CSV</button>
+  </div>
+
+  <div class="hint">
+    <b>Pour l'avoir comme une app :</b>
+    <ol>
+      <li>Ouvre cette page dans Safari sur l'iPhone.</li>
+      <li>Bouton Partager <span aria-hidden="true">&#8593;</span> &rarr; « Sur l'écran d'accueil ».</li>
+      <li>Elle s'ouvre ensuite en plein écran, avec son icône.</li>
+    </ol>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var KEY = "scanner-douze.v1";
+  var entries = [];
+  var settings = { dup: true, beep: true, lot: "" };
+
+  var el = function (id) { return document.getElementById(id); };
+  var cam = el("cam"), idle = el("idle"), reticle = el("reticle"), flash = el("flash");
+  var statusEl = el("status"), readout = el("readout"), tally = el("tally");
+  var log = el("log"), emptyNote = el("emptyNote");
+  var btnCam = el("btnCam"), btnPhoto = el("btnPhoto"), photo = el("photo");
+  var btnAdd = el("btnAdd"), manual = el("manual"), lot = el("lot");
+  var btnClear = el("btnClear"), btnXlsx = el("btnXlsx"), btnCsv = el("btnCsv");
+  var optDup = el("optDup"), optBeep = el("optBeep");
+
+  /* ---------- storage ---------- */
+  function load() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (!raw) return;
+      var data = JSON.parse(raw);
+      if (Array.isArray(data.entries)) entries = data.entries;
+      if (data.settings) {
+        settings.dup = data.settings.dup !== false;
+        settings.beep = data.settings.beep !== false;
+        settings.lot = typeof data.settings.lot === "string" ? data.settings.lot : "";
+      }
+    } catch (e) { /* stockage indisponible : on continue en mémoire */ }
+  }
+  function save() {
+    try {
+      localStorage.setItem(KEY, JSON.stringify({ entries: entries, settings: settings }));
+    } catch (e) { /* idem */ }
+  }
+
+  /* ---------- 12-digit extraction ---------- */
+  function extract(raw) {
+    var text = String(raw == null ? "" : raw).trim();
+    var runs = text.split(/\D+/).filter(Boolean);
+    var i;
+    for (i = 0; i < runs.length; i++) {
+      if (runs[i].length === 12) return { code: runs[i], ok: true, raw: text };
+    }
+    var all = runs.join("");
+    if (all.length === 12) return { code: all, ok: true, raw: text };
+    return { code: all || text, ok: false, raw: text };
+  }
+
+  /* ---------- feedback ---------- */
+  var audio = null;
+  function beep(bad) {
+    if (!settings.beep) return;
+    try {
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      if (!audio) audio = new Ctx();
+      if (audio.state === "suspended") audio.resume();
+      var osc = audio.createOscillator(), gain = audio.createGain();
+      osc.type = "square";
+      osc.frequency.value = bad ? 320 : 1180;
+      gain.gain.setValueAtTime(0.0001, audio.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.18, audio.currentTime + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + (bad ? 0.28 : 0.12));
+      osc.connect(gain); gain.connect(audio.destination);
+      osc.start(); osc.stop(audio.currentTime + (bad ? 0.3 : 0.14));
+    } catch (e) { /* pas de son sur cet appareil */ }
+  }
+  function blink() {
+    flash.classList.remove("on");
+    void flash.offsetWidth;
+    flash.classList.add("on");
+  }
+  var toastTimer = null, toastEl = null;
+  function toast(msg) {
+    if (!toastEl) {
+      toastEl = document.createElement("div");
+      toastEl.className = "toast";
+      toastEl.setAttribute("role", "status");
+      document.body.appendChild(toastEl);
+    }
+    toastEl.textContent = msg;
+    toastEl.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.hidden = true; }, 2600);
+  }
+  function setStatus(text, mode) {
+    statusEl.textContent = text;
+    readout.className = "readout" + (mode ? " " + mode : "");
+  }
+
+  /* ---------- entries ---------- */
+  function counts() {
+    var map = {};
+    entries.forEach(function (e) { map[e.code] = (map[e.code] || 0) + 1; });
+    return map;
+  }
+  function add(raw, source) {
+    var parsed = extract(raw);
+    if (!parsed.code) { setStatus("QR vide, rien à enregistrer", "err"); beep(true); return false; }
+    if (settings.dup) {
+      var seen = entries.some(function (e) { return e.code === parsed.code; });
+      if (seen) {
+        setStatus(parsed.code + " — déjà dans le relevé", "err");
+        beep(true);
+        toast("Doublon ignoré : " + parsed.code);
+        return false;
+      }
+    }
+    entries.push({
+      code: parsed.code,
+      raw: parsed.raw,
+      ok: parsed.ok,
+      ts: Date.now(),
+      src: source
+    });
+    save();
+    render();
+    blink();
+    beep(!parsed.ok);
+    setStatus(parsed.code + (parsed.ok ? " — enregistré" : " — enregistré (pas 12 chiffres)"), parsed.ok ? "live" : "err");
+    if (!parsed.ok) toast("Attention : " + parsed.code.length + " chiffres au lieu de 12");
+    return true;
+  }
+  function fmtTime(ts) {
+    var d = new Date(ts);
+    return d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  }
+  function fmtDate(ts) {
+    var d = new Date(ts);
+    return d.toLocaleDateString("fr-FR");
+  }
+
+  function render() {
+    tally.textContent = String(entries.length);
+    log.textContent = "";
+    var dups = counts();
+
+    if (!entries.length) {
+      var li = document.createElement("li");
+      li.className = "sample";
+      li.innerHTML =
+        '<span class="seq">1</span>' +
+        '<span class="val"><span class="code">401234567890</span>' +
+        '<span class="meta">exemple &middot; 09:41:02</span></span>';
+      log.appendChild(li);
+      emptyNote.hidden = false;
+      btnXlsx.disabled = true;
+      btnCsv.disabled = true;
+      btnClear.disabled = true;
+      return;
+    }
+    emptyNote.hidden = true;
+    btnXlsx.disabled = false;
+    btnCsv.disabled = false;
+    btnClear.disabled = false;
+
+    entries.slice().reverse().forEach(function (e, idx) {
+      var n = entries.length - idx;
+      var li = document.createElement("li");
+
+      var seq = document.createElement("span");
+      seq.className = "seq";
+      seq.textContent = String(n);
+
+      var val = document.createElement("span");
+      val.className = "val";
+      var code = document.createElement("span");
+      code.className = "code";
+      code.textContent = e.code;
+      var meta = document.createElement("span");
+      meta.className = "meta";
+      meta.appendChild(document.createTextNode(fmtTime(e.ts)));
+      if (!e.ok) {
+        var w = document.createElement("span");
+        w.className = "chip warn";
+        w.textContent = e.code.length + " chiffres";
+        meta.appendChild(w);
+      }
+      if (dups[e.code] > 1) {
+        var d = document.createElement("span");
+        d.className = "chip dup";
+        d.textContent = "x" + dups[e.code];
+        meta.appendChild(d);
+      }
+      val.appendChild(code);
+      val.appendChild(meta);
+
+      var kill = document.createElement("button");
+      kill.className = "kill";
+      kill.type = "button";
+      kill.textContent = "Supprimer";
+      kill.setAttribute("aria-label", "Supprimer " + e.code);
+      kill.addEventListener("click", function () {
+        entries.splice(entries.length - 1 - idx, 1);
+        save();
+        render();
+      });
+
+      li.appendChild(seq);
+      li.appendChild(val);
+      li.appendChild(kill);
+      log.appendChild(li);
+    });
+  }
+
+  /* ---------- camera ---------- */
+  var stream = null, rafId = null, frame = 0, busy = false, detector = null;
+  var canvas = document.createElement("canvas");
+  var ctx = canvas.getContext("2d", { willReadFrequently: true });
+  var lastCode = "", lastAt = 0;
+
+  function hit(raw) {
+    var now = Date.now();
+    var parsed = extract(raw);
+    if (parsed.code === lastCode && now - lastAt < 2500) return;
+    lastCode = parsed.code;
+    lastAt = now;
+    add(raw, "caméra");
+  }
+
+  function tick() {
+    rafId = requestAnimationFrame(tick);
+    frame++;
+    if (frame % 2) return;
+    if (!cam.videoWidth || cam.readyState < 2) return;
+
+    if (detector) {
+      if (busy) return;
+      busy = true;
+      detector.detect(cam).then(function (res) {
+        busy = false;
+        if (res && res.length && res[0].rawValue) hit(res[0].rawValue);
+      })["catch"](function () { busy = false; detector = null; });
+      return;
+    }
+    if (typeof jsQR !== "function") return;
+    var scale = Math.min(1, 640 / Math.max(cam.videoWidth, cam.videoHeight));
+    canvas.width = Math.round(cam.videoWidth * scale);
+    canvas.height = Math.round(cam.videoHeight * scale);
+    ctx.drawImage(cam, 0, 0, canvas.width, canvas.height);
+    var img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    var found = jsQR(img.data, img.width, img.height, { inversionAttempts: "dontInvert" });
+    if (found && found.data) hit(found.data);
+  }
+
+  function startCam() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setStatus("Caméra live indisponible ici — utilise « Scanner une photo »", "err");
+      toast("Caméra live indisponible : passe par la photo");
+      return;
+    }
+    setStatus("Ouverture de la caméra…");
+    navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
+      audio: false
+    }).then(function (s) {
+      stream = s;
+      cam.srcObject = s;
+      cam.hidden = false;
+      reticle.hidden = false;
+      idle.hidden = true;
+      btnCam.textContent = "Arrêter la caméra";
+      btnCam.classList.remove("primary");
+      setStatus("Scan en cours — vise le QR code", "live");
+      if (window.BarcodeDetector) {
+        try { detector = new window.BarcodeDetector({ formats: ["qr_code"] }); } catch (e) { detector = null; }
+      }
+      return cam.play()["catch"](function () {});
+    }).then(function () {
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(tick);
+    })["catch"](function (err) {
+      var name = err && err.name ? err.name : "";
+      var msg = name === "NotAllowedError"
+        ? "Accès caméra refusé — autorise-le, ou utilise « Scanner une photo »"
+        : "Caméra inaccessible ici — utilise « Scanner une photo »";
+      setStatus(msg, "err");
+      toast(msg);
+    });
+  }
+
+  function stopCam() {
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+    if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; }
+    cam.srcObject = null;
+    cam.hidden = true;
+    reticle.hidden = true;
+    idle.hidden = false;
+    detector = null;
+    busy = false;
+    btnCam.textContent = "Démarrer la caméra";
+    btnCam.classList.add("primary");
+    setStatus("En attente");
+  }
+
+  btnCam.addEventListener("click", function () {
+    if (stream) stopCam(); else startCam();
+  });
+
+  /* ---------- photo fallback ---------- */
+  btnPhoto.addEventListener("click", function () { photo.click(); });
+  photo.addEventListener("change", function () {
+    var file = photo.files && photo.files[0];
+    photo.value = "";
+    if (!file) return;
+    if (typeof jsQR !== "function") { setStatus("Décodeur indisponible (hors ligne ?)", "err"); return; }
+    setStatus("Lecture de la photo…");
+    var url = URL.createObjectURL(file);
+    var img = new Image();
+    img.onload = function () {
+      var scale = Math.min(1, 1400 / Math.max(img.width, img.height));
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      var data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      var found = jsQR(data.data, data.width, data.height, { inversionAttempts: "attemptBoth" });
+      URL.revokeObjectURL(url);
+      if (found && found.data) add(found.data, "photo");
+      else { setStatus("Aucun QR code trouvé sur la photo", "err"); beep(true); }
+    };
+    img.onerror = function () {
+      URL.revokeObjectURL(url);
+      setStatus("Image illisible", "err");
+    };
+    img.src = url;
+  });
+
+  /* ---------- manual ---------- */
+  function addManual() {
+    var v = manual.value.trim();
+    if (!v) return;
+    if (add(v, "manuel")) manual.value = "";
+  }
+  btnAdd.addEventListener("click", addManual);
+  manual.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") { e.preventDefault(); addManual(); }
+  });
+
+  /* ---------- options ---------- */
+  optDup.addEventListener("change", function () { settings.dup = optDup.checked; save(); });
+  optBeep.addEventListener("change", function () { settings.beep = optBeep.checked; save(); if (optBeep.checked) beep(false); });
+  lot.addEventListener("input", function () { settings.lot = lot.value; save(); });
+
+  btnClear.addEventListener("click", function () {
+    if (!entries.length) return;
+    if (!window.confirm("Effacer les " + entries.length + " code(s) du relevé ? Pense à exporter avant.")) return;
+    entries = [];
+    lastCode = "";
+    save();
+    render();
+    toast("Relevé vidé");
+  });
+
+  /* ---------- export ---------- */
+  function slug(s) {
+    return String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "")
+      .replace(/[^A-Za-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
+  }
+  function filename() {
+    var d = new Date();
+    var stamp = d.getFullYear() + "-" +
+      String(d.getMonth() + 1).padStart(2, "0") + "-" +
+      String(d.getDate()).padStart(2, "0");
+    var name = slug(lot.value) || "scans";
+    return name + "-" + stamp + ".xlsx";
+  }
+  function table() {
+    var rows = [["N°", "Code", "Date", "Heure", "Contenu du QR", "Statut"]];
+    entries.forEach(function (e, i) {
+      rows.push([
+        i + 1,
+        e.code,
+        fmtDate(e.ts),
+        fmtTime(e.ts),
+        e.raw,
+        e.ok ? "OK" : e.code.length + " chiffres"
+      ]);
+    });
+    return rows;
+  }
+
+  function downloadFile(blob, name) {
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+    toast("Fichier Excel prêt : " + name);
+  }
+  function saveFile(blob, name) {
+    var file = null;
+    try { file = new File([blob], name, { type: blob.type }); } catch (e) { file = null; }
+    if (file && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      navigator.share({ files: [file], title: name }).then(function () {
+        toast("Fichier transmis : " + name);
+      })["catch"](function (err) {
+        if (err && err.name === "AbortError") return;
+        downloadFile(blob, name);
+      });
+      return;
+    }
+    downloadFile(blob, name);
+  }
+
+  btnXlsx.addEventListener("click", function () {
+    if (!entries.length) return;
+    if (typeof XLSX === "undefined") { toast("Bibliothèque Excel non chargée — vérifie la connexion"); return; }
+    var ws = XLSX.utils.aoa_to_sheet(table());
+    ws["!cols"] = [{ wch: 5 }, { wch: 16 }, { wch: 12 }, { wch: 10 }, { wch: 36 }, { wch: 14 }];
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Scans");
+    var buf = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    var blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    var name = filename();
+
+    saveFile(blob, name);
+  });
+
+  btnCsv.addEventListener("click", function () {
+    if (!entries.length) return;
+    var csv = table().map(function (r) {
+      return r.map(function (c) {
+        var s = String(c);
+        return /[";\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+      }).join(";");
+    }).join("\r\n");
+    var done = function () { toast("CSV copié — colle-le dans Excel"); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(csv).then(done)["catch"](function () { legacyCopy(csv, done); });
+    } else legacyCopy(csv, done);
+  });
+  function legacyCopy(text, done) {
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.top = "-1000px";
+    document.body.appendChild(ta);
+    ta.select();
+    ta.setSelectionRange(0, text.length);
+    var ok = false;
+    try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+    ta.remove();
+    if (ok) done(); else toast("Copie refusée par le navigateur");
+  }
+
+  /* ---------- lifecycle ---------- */
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden && stream) stopCam();
+  });
+  window.addEventListener("pagehide", function () { if (stream) stopCam(); });
+
+  load();
+  optDup.checked = settings.dup;
+  optBeep.checked = settings.beep;
+  lot.value = settings.lot;
+  render();
+  if (entries.length) setStatus(entries.length + " code(s) en mémoire");
+
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("sw.js")["catch"](function () {});
+    });
+  }
+})();
+</script>
+
+</body>
+</html>

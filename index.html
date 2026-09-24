@@ -1039,13 +1039,10 @@ tr.exemple td{opacity:.5; font-style:italic}
       + "-" + String(d.getDate()).padStart(2, "0");
     return (slug(lot.value) || "scans") + "-" + stamp + ".xlsx";
   }
+  /* le classeur ne contient que les numeros : une colonne, une ligne par code.
+     Le reste (date, source, contenu brut du QR) reste visible dans l'appli. */
   function tableau() {
-    var rows = [["N°", "Code", "Date", "Heure", "Source", "Contenu du QR", "Statut"]];
-    entries.forEach(function (e, i) {
-      rows.push([i + 1, e.code, jour(e.ts), heure(e.ts), e.src, e.raw,
-        e.ok ? "OK" : e.code.length + " chiffres"]);
-    });
-    return rows;
+    return entries.map(function (e) { return [e.code]; });
   }
 
   /* trois chemins, du plus propre au plus rustique, parce qu'iOS refuse
@@ -1102,8 +1099,7 @@ tr.exemple td{opacity:.5; font-style:italic}
       return;
     }
     var ws = XLSX.utils.aoa_to_sheet(tableau());
-    ws["!cols"] = [{ wch: 5 }, { wch: 16 }, { wch: 12 }, { wch: 10 }, { wch: 10 },
-      { wch: 34 }, { wch: 14 }];
+    ws["!cols"] = [{ wch: 18 }];
     var wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Scans");
     var buf = XLSX.write(wb, { bookType: "xlsx", type: "array", compression: true });
@@ -1114,7 +1110,7 @@ tr.exemple td{opacity:.5; font-style:italic}
 
   btnCsv.addEventListener("click", function () {
     if (!entries.length) return;
-    var csv = "﻿" + tableau().map(function (r) {
+    var csv = tableau().map(function (r) {
       return r.map(function (c) {
         var s = String(c);
         return /[";\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
